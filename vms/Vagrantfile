@@ -1,6 +1,6 @@
 # https://www.vagrantup.com/docs/vagrantfile/
 
-# This is just a Ruby program:  https://docs.ruby-lang.org/en/
+# This is just a Ruby program:  https://www.ruby-lang.org/en/documentation/
 
 deploy_elb = false
 deploy_edns = false
@@ -15,7 +15,7 @@ deploy_k8s_worker = false
 #   - Kubernetes master nodes
 #   - Kubernetes worker nodes
 
-regions = ["us-east"]
+regions = ["us-east"]  # ["us-east", "us-west", "eu-east", etc....]
 number_of_regions = regions.size
 number_of_elbs_per_region = 1
 number_of_ednss_per_region = 1
