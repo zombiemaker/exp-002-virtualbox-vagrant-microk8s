@@ -6,7 +6,8 @@ It allows software engineers, devops process engineers, and application system e
 
 Components types include:
 
-* Internet traffic manager DNS service
+* Internet traffic manager DNS service 
 * Internet CDN service
 * Internet firewall
 * External Kubernetes cluster load balancers to balance traffic across Kubernetes API servers and worker nodes
+* External Kubernetes cluster DNS servers
