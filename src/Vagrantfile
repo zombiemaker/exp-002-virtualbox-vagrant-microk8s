@@ -5,7 +5,7 @@
 # that is linked to the VM host machine's directory where the vagrant program was executed.
 # This enables the VM guest OS to access and share files between VMs
 
-debug = true
+debug = false
 deploy_elb = false
 deploy_edns = false
 deploy_k8s_master = true
@@ -32,7 +32,7 @@ number_of_azs_per_region = 3
 # Distribute nodes across number of AZs
 # Each K8s cluster will use 1 IPv4 class C address range (for this design)
 # Estimate 100 pods per worker node
-master_nodes_per_cluster = 3
+master_nodes_per_cluster = 2
 worker_nodes_per_cluster = 1
 number_ip_addresses_reserved_per_cluster = 5
 
@@ -40,6 +40,18 @@ number_ip_addresses_reserved_per_cluster = 5
 Vagrant.require_version ">= 1.3.5"
 Vagrant.configure("2") do |config|
 
+    # Configurations for all VMs
+    # Enable SSH authentication using username and password
+    config.vm.provision "shell", inline: <<-EOF
+        echo "Changing sshd configuration to allow username and password authentication"
+        sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+
+        echo "Restarting sshd process"
+        sudo systemctl restart sshd
+    EOF
+
+
+    # VM specific configurations
     (1..number_of_regions).each do |r|
 
         # ELBs and DNSs are region level components
@@ -119,13 +131,8 @@ Vagrant.configure("2") do |config|
                         
                         if debug
                             puts "Current master_node object id = #{master_node.object_id}"
-                            #puts "Current master_node instance variables = #{master_node.instance_variables}"
-                            #puts "Current master_node methods = #{master_node.methods}"
                             puts "Current master_node.vm = #{master_node.vm}"
-
                             puts "master_node_m1 object id = #{$master_node_m1.object_id}"
-                            #puts "master_node_m1 instance variables = #{$master_node_m1.instance_variables}"
-                            #puts "master_node_m1 methods = #{$master_node_m1.methods}"
                             puts "master_node_m1.vm = #{$master_node_m1.vm}"
                         end # if debug
                         
