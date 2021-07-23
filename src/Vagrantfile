@@ -32,7 +32,7 @@ number_of_azs_per_region = 3
 # Distribute nodes across number of AZs
 # Each K8s cluster will use 1 IPv4 class C address range (for this design)
 # Estimate 100 pods per worker node
-master_nodes_per_cluster = 2
+master_nodes_per_cluster = 3
 worker_nodes_per_cluster = 1
 number_ip_addresses_reserved_per_cluster = 5
 
@@ -145,7 +145,7 @@ Vagrant.configure("2") do |config|
                             vb.cpus = 2            
                         end #vb
 
-                        master_node.vm.disk(:disk, size: "70GB", primary: true)
+                        master_node.vm.disk(:disk, size: "40GB", primary: true)
 
                         master_node.vm.provision "shell", inline: <<-EOF
                             echo "Configuring $(hostname)"
@@ -173,26 +173,29 @@ Vagrant.configure("2") do |config|
                             # Configure kubectl
                             cd ~
                             echo "Current working directory: $(pwd)"
-                            #mkdir .kube
                             cd .kube
 
                             # TODO: this is not going to have the right IP address to the API server - it will use the adapter connected to the NAT
-                            microk8s config > config
+                            microk8s config > /vagrant/kubectl-config
+                            sudo sed -i 's+server: https://10.0.2.15:16443+https://10.1.1.6:16443+g' /vagrant/kubectl-config
+                            whoami
+                            pwd
+                            cp /vagrant/kubectl-config ~/.kube/config
                         EOF
 
-                        # if m != 1
-                        #     # Generate node token on main master node                            
-                        #     $master_node_m1.vm.provision "shell", inline: <<-EOF
-                        #         echo "Generating MicroK8s new node token for #{master_node_vm_hostname}"
-                        #         microk8s add-node | grep #{$master_node_m1_vm_ipv4_address} | tee /vagrant/add_k8s_node_#{master_node_vm_hostname}
-                        #     EOF
+                        if m != 1
+                            # Generate node token on main master node                            
+                            $master_node_m1.vm.provision "shell", inline: <<-EOF
+                                echo "Generating MicroK8s new node token for #{master_node_vm_hostname}"
+                                microk8s add-node | grep #{$master_node_m1_vm_ipv4_address} | tee /vagrant/add_k8s_node_#{master_node_vm_hostname}
+                            EOF
 
-                        #     # Join cluster on new node using generated token
-                        #     master_node.vm.provision "shell", inline: <<-EOF
-                        #         echo "Joining MicroK8s cluster using new node token"
-                        #         bash -x /vagrant/add_k8s_node_#{master_node_vm_hostname}
-                        #     EOF
-                        # end # if m != 1
+                            # Join cluster on new node using generated token
+                            master_node.vm.provision "shell", inline: <<-EOF
+                                echo "Joining MicroK8s cluster using new node token"
+                                bash -x /vagrant/add_k8s_node_#{master_node_vm_hostname}
+                            EOF
+                        end # if m != 1
                     end # master_node config.vm.define
                 end # m
             end # if deploy_k8s_master
