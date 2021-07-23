@@ -2,6 +2,11 @@
 
 # This is just a Ruby program:  https://docs.ruby-lang.org/en/
 
+deploy_elb = true
+deploy_edns = false
+deploy_k8s_master = false
+deploy_k8s_worker = false
+
 # Assuming that a cluster is needed for a separate geographic region  or availability zone
 # Each cluster needs:
 #   - External BGP router / load balancer
@@ -10,13 +15,14 @@
 #   - Kubernetes master nodes
 #   - Kubernetes worker nodes
 
-regions = ["us-east","us-west"]
+regions = ["us-east"]
 number_of_regions = regions.size
-number_of_elbs_per_region = 2
-number_of_ednss_per_region = 2
+number_of_elbs_per_region = 1
+number_of_ednss_per_region = 1
 number_of_clusters_per_region = 1
 number_of_clusters = number_of_regions * number_of_clusters_per_region
 number_of_azs_per_region = 3
+
 # Master nodes and worker nodes will be in the same subnet
 # Total number of master and worker nodes cannot exceed subnet capacity (including addresses reserved for network services)
 # Distribute nodes across number of AZs
@@ -33,95 +39,104 @@ Vagrant.configure("2") do |config|
     (1..number_of_regions).each do |r|
 
         # ELBs and DNSs are region level components
-        (1..number_of_elbs_per_region).each do |elb_id|
-            # Cluster BGP Router / External Load Balancer (assuming 2 ELBs per cluster)
-            config.vm.define "k8s-r#{r}-elb#{elb_id}" do |elb|
-                elb.vm.box = "ubuntu/focal64"
-                elb.vm.hostname = "k8s-r#{r}-elb#{elb_id}"
-                elb.vm.network "private_network", ip: "10.#{r}.0.#{elb_id}", netmask: "255.255.255.0"
-                elb.vm.provider "virtualbox" do |vb|
-                    vb.gui = true
-                    vb.name = "k8s-r#{r}-elb#{elb_id}"
-                    vb.memory = 2048
-                    vb.cpus = 1            
-                end # vb
+        if deploy_elb
+            (1..number_of_elbs_per_region).each do |elb_id|
+                # Cluster BGP Router / External Load Balancer (assuming 2 ELBs per cluster)
+                
+                config.vm.define "k8s-r#{r}-elb#{elb_id}" do |elb|
+                    elb.vm.box = "ubuntu/focal64"
+                    elb.vm.hostname = "k8s-r#{r}-elb#{elb_id}"
+                    elb.vm.network "private_network", ip: "10.#{r}.0.#{elb_id}", netmask: "255.255.255.0"
+                    elb.vm.provider "virtualbox" do |vb|
+                        vb.gui = true
+                        vb.name = "k8s-r#{r}-elb#{elb_id}"
+                        vb.memory = 2048
+                        vb.cpus = 1            
+                    end # vb
 
-                elb.vm.disk :disk, size: "70GB", primary: true
+                    elb.vm.disk :disk, size: "70GB", primary: true
 
-                elb.vm.provision "shell" do |s|
-                    s.inline = "echo Configuring k8s-r#{r}-elb#{elb_id}"
-                end # s
-            end # elb
-        end # elb_id
+                    elb.vm.provision "shell" do |s|
+                        s.inline = "echo Configuring k8s-r#{r}-elb#{elb_id}"
+                    end # s
+                end # elb
+            end # elb_id
+        end # if deploy_elb
 
         # Cluster External DNS Authoritative Servers
-        (1..number_of_ednss_per_region).each do |edns_id|
-            config.vm.define "k8s-r#{r}-edns#{edns_id}" do |edns|
-                edns.vm.box = "ubuntu/focal64"
-                edns.vm.hostname = "k8s-r#{r}-edns#{edns_id}"
-                edns.vm.network "private_network", ip: "10.#{r}.0.#{number_of_elbs_per_region + edns_id}", netmask: "255.255.255.0"
-                edns.vm.provider "virtualbox" do |vb|
-                    vb.gui = true
-                    vb.name = "k8s-r#{r}-edns#{edns_id}"
-                    vb.memory = 2048
-                    vb.cpus = 1            
-                end # vb
+        if deploy_edns
+            (1..number_of_ednss_per_region).each do |edns_id|
+                config.vm.define "k8s-r#{r}-edns#{edns_id}" do |edns|
+                    edns.vm.box = "ubuntu/focal64"
+                    edns.vm.hostname = "k8s-r#{r}-edns#{edns_id}"
+                    edns.vm.network "private_network", ip: "10.#{r}.0.#{number_of_elbs_per_region + edns_id}", netmask: "255.255.255.0"
+                    edns.vm.provider "virtualbox" do |vb|
+                        vb.gui = true
+                        vb.name = "k8s-r#{r}-edns#{edns_id}"
+                        vb.memory = 2048
+                        vb.cpus = 1            
+                    end # vb
 
-                edns.vm.disk :disk, size: "20GB", primary: true
+                    edns.vm.disk :disk, size: "20GB", primary: true
 
-                edns.vm.provision "shell" do |s|
-                    s.inline = "echo Configuring k8s-r#{r}-edns#{edns_id}"
-                end # s
-            end # edns
-        end # edns_id
+                    edns.vm.provision "shell" do |s|
+                        s.inline = "echo Configuring k8s-r#{r}-edns#{edns_id}"
+                    end # s
+                end # edns
+            end # edns_id
+        end # if deploy_edns
 
 
         (1..number_of_clusters_per_region).each do |c|
             # Kubernetes Cluster Master Nodes
-            (1..master_nodes_per_cluster).each do |m|
-                config.vm.define "k8s-r#{r}-c#{c}-m#{m}" do |master_node|
-                    master_node.vm.box = "ubuntu/focal64"
-                    master_node.vm.hostname = "k8s-c#{c}-m#{m}"
-                    
-                    # IPv4 addresses allocated from start of address range after reserved addresses
-                    master_node.vm.network "private_network", ip: "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}", netmask: "255.255.255.0"
-                    master_node.vm.provider "virtualbox" do |vb|
-                        vb.gui = true
-                        vb.name = "k8s-r#{r}-c#{c}-m#{m}"
-                        vb.memory = 4096
-                        vb.cpus = 2            
-                    end
+            if deploy_k8s_master
+                (1..master_nodes_per_cluster).each do |m|
+                    config.vm.define "k8s-r#{r}-c#{c}-m#{m}" do |master_node|
+                        master_node.vm.box = "ubuntu/focal64"
+                        master_node.vm.hostname = "k8s-c#{c}-m#{m}"
+                        
+                        # IPv4 addresses allocated from start of address range after reserved addresses
+                        master_node.vm.network "private_network", ip: "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}", netmask: "255.255.255.0"
+                        master_node.vm.provider "virtualbox" do |vb|
+                            vb.gui = true
+                            vb.name = "k8s-r#{r}-c#{c}-m#{m}"
+                            vb.memory = 4096
+                            vb.cpus = 2            
+                        end #vb
 
-                    master_node.vm.disk :disk, size: "70GB", primary: true
+                        master_node.vm.disk :disk, size: "70GB", primary: true
 
-                    master_node.vm.provision "shell" do |s|
-                        s.inline = "echo Configuring k8s-r#{r}-c#{c}-m#{m}"
-                    end
-                end
-            end # m
+                        master_node.vm.provision "shell" do |s|
+                            s.inline = "echo Configuring k8s-r#{r}-c#{c}-m#{m}"
+                        end # s
+                    end # master_node
+                end # m
+            end # if deploy_k8s_master
 
             # Kubernetes Cluster Worker Nodes
-            (1..worker_nodes_per_cluster).each do |w|
-                config.vm.define "k8s-r#{r}-c#{c}-w#{w}" do |worker_node|
-                    worker_node.vm.box = "ubuntu/focal64"
-                    worker_node.vm.hostname = "k8s-r#{r}-c#{c}-w#{w}"
+            if deploy_k8s_worker
+                (1..worker_nodes_per_cluster).each do |w|
+                    config.vm.define "k8s-r#{r}-c#{c}-w#{w}" do |worker_node|
+                        worker_node.vm.box = "ubuntu/focal64"
+                        worker_node.vm.hostname = "k8s-r#{r}-c#{c}-w#{w}"
 
-                    # IPv4 addresses allocated from end of address range
-                    worker_node.vm.network "private_network", ip: "10.#{r}.#{c}.#{255-w}", netmask: "255.255.255.0"
-                    worker_node.vm.provider "virtualbox" do |vb|
-                        vb.gui = true
-                        vb.name = "k8s-r#{r}-c#{c}-w#{w}"
-                        vb.memory = 4096
-                        vb.cpus = 2            
-                    end
+                        # IPv4 addresses allocated from end of address range
+                        worker_node.vm.network "private_network", ip: "10.#{r}.#{c}.#{255-w}", netmask: "255.255.255.0"
+                        worker_node.vm.provider "virtualbox" do |vb|
+                            vb.gui = true
+                            vb.name = "k8s-r#{r}-c#{c}-w#{w}"
+                            vb.memory = 4096
+                            vb.cpus = 2            
+                        end # vb
 
-                    worker_node.vm.disk :disk, size: "70GB", primary: true
+                        worker_node.vm.disk :disk, size: "70GB", primary: true
 
-                    worker_node.vm.provision "shell" do |s|
-                        s.inline = "echo Configuring k8s-r#{r}-c#{c}-w#{w}"
-                    end
+                        worker_node.vm.provision "shell" do |s|
+                            s.inline = "echo Configuring k8s-r#{r}-c#{c}-w#{w}"
+                        end # s
+                    end # worker_node
                 end # w
-            end # m
+            end # if deploy_k8s_worker
         end # c
     end # r
 end
