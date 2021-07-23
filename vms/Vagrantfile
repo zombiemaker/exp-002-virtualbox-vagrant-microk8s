@@ -2,9 +2,9 @@
 
 # This is just a Ruby program:  https://docs.ruby-lang.org/en/
 
-deploy_elb = true
+deploy_elb = false
 deploy_edns = false
-deploy_k8s_master = false
+deploy_k8s_master = true
 deploy_k8s_worker = false
 
 # Assuming that a cluster is needed for a separate geographic region  or availability zone
@@ -28,12 +28,12 @@ number_of_azs_per_region = 3
 # Distribute nodes across number of AZs
 # Each K8s cluster will use 1 IPv4 class C address range (for this design)
 # Estimate 100 pods per worker node
-master_nodes_per_cluster = 3
-worker_nodes_per_cluster = 3
+master_nodes_per_cluster = 1
+worker_nodes_per_cluster = 1
 number_ip_addresses_reserved_per_cluster = 5
 
-Vagrant.require_version ">= 1.3.5"
 
+Vagrant.require_version ">= 1.3.5"
 Vagrant.configure("2") do |config|
 
     (1..number_of_regions).each do |r|
@@ -58,6 +58,8 @@ Vagrant.configure("2") do |config|
 
                     elb.vm.provision "shell" do |s|
                         s.inline = "echo Configuring k8s-r#{r}-elb#{elb_id}"
+                        s.inline = "sudo apt update && apt upgrade -y"
+                        s.inline = "sudo apt install quagga-bgpd quagga-doc -y"
                     end # s
                 end # elb
             end # elb_id
@@ -92,14 +94,24 @@ Vagrant.configure("2") do |config|
             if deploy_k8s_master
                 (1..master_nodes_per_cluster).each do |m|
                     config.vm.define "k8s-r#{r}-c#{c}-m#{m}" do |master_node|
+                        $master_node_vm_name = "k8s-r#{r}-c#{c}-m#{m}"
+                        $master_node_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
+                        $master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
+                        if m == 1
+                            $master_node_m1_vm_ipv4_address = $master_node_vm_ipv4_address
+                        end # if m == 1
+
                         master_node.vm.box = "ubuntu/focal64"
-                        master_node.vm.hostname = "k8s-c#{c}-m#{m}"
+                        #master_node.vm.hostname = "k8s-r#{r}-c#{c}-m#{m}"
+                        master_node.vm.hostname = $master_node_vm_hostname
                         
                         # IPv4 addresses allocated from start of address range after reserved addresses
-                        master_node.vm.network "private_network", ip: "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}", netmask: "255.255.255.0"
+                        #master_node.vm.network "private_network", ip: "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}", netmask: "255.255.255.0"
+                        master_node.vm.network "private_network", ip: $master_node_vm_ipv4_address, netmask: "255.255.255.0"
                         master_node.vm.provider "virtualbox" do |vb|
                             vb.gui = true
-                            vb.name = "k8s-r#{r}-c#{c}-m#{m}"
+                            #vb.name = "k8s-r#{r}-c#{c}-m#{m}"
+                            vb.name = $master_node_vm_name
                             vb.memory = 4096
                             vb.cpus = 2            
                         end #vb
@@ -107,7 +119,8 @@ Vagrant.configure("2") do |config|
                         master_node.vm.disk :disk, size: "70GB", primary: true
 
                         master_node.vm.provision "shell" do |s|
-                            s.inline = "echo Configuring k8s-r#{r}-c#{c}-m#{m}"
+                            s.path = "k8s-master.sh"
+                            s.args = [$master_node_m1_vm_ipv4_address]
                         end # s
                     end # master_node
                 end # m
@@ -139,4 +152,4 @@ Vagrant.configure("2") do |config|
             end # if deploy_k8s_worker
         end # c
     end # r
-end
+end # config
