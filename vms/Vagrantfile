@@ -1,7 +1,11 @@
 # https://www.vagrantup.com/docs/vagrantfile/
 
 # This is just a Ruby program:  https://www.ruby-lang.org/en/documentation/
+# When creating VirtualBox VMs using Vagrant, Vagrant creates a file system mount /vagrant
+# that is linked to the VM host machine's directory where the vagrant program was executed.
+# This enables the VM guest OS to access and share files between VMs
 
+debug = true
 deploy_elb = false
 deploy_edns = false
 deploy_k8s_master = true
@@ -28,7 +32,7 @@ number_of_azs_per_region = 3
 # Distribute nodes across number of AZs
 # Each K8s cluster will use 1 IPv4 class C address range (for this design)
 # Estimate 100 pods per worker node
-master_nodes_per_cluster = 1
+master_nodes_per_cluster = 3
 worker_nodes_per_cluster = 1
 number_ip_addresses_reserved_per_cluster = 5
 
@@ -56,12 +60,12 @@ Vagrant.configure("2") do |config|
 
                     elb.vm.disk(:disk, size: "70GB", primary: true)
 
-                    elb.vm.provision("shell") do |s|
-                        s.inline = "echo Configuring k8s-r#{r}-elb#{elb_id}"
-                        s.inline = "sudo apt update && apt upgrade -y"
-                        s.inline = "sudo apt install quagga-bgpd quagga-doc -y"
-                    end # s
-                end # elb
+                    elb.vm.provision "shell", inline: <<-EOF
+                        echo Configuring k8s-r#{r}-elb#{elb_id}"
+                        sudo apt update && apt upgrade -y
+                        sudo apt install quagga-bgpd quagga-doc -y
+                    EOF
+                end # elb config.vm.define
             end # elb_id
         end # if deploy_elb
 
@@ -81,10 +85,11 @@ Vagrant.configure("2") do |config|
 
                     edns.vm.disk(:disk, size: "20GB", primary: true)
 
-                    edns.vm.provision("shell") do |s|
-                        s.inline = "echo Configuring k8s-r#{r}-edns#{edns_id}"
-                    end # s
-                end # edns
+                    edns.vm.provision "shell", inline: <<-EOF
+                        echo Configuring k8s-r#{r}-edns#{edns_id}
+                        sudo apt update && apt upgrade -y
+                    EOF
+                end # edns config.vm.define
             end # edns_id
         end # if deploy_edns
 
@@ -93,36 +98,95 @@ Vagrant.configure("2") do |config|
             # Kubernetes Cluster Master Nodes
             if deploy_k8s_master
                 (1..master_nodes_per_cluster).each do |m|
+                    # Define local variable to point cluster main master node
+                    $master_node_m1 = nil
+                    $master_node_m1_vm_hostname = nil
+                    $master_node_m1_vm_ipv4_address = nil
+
                     config.vm.define("k8s-r#{r}-c#{c}-m#{m}") do |master_node|
-                        $master_node_vm_name = "k8s-r#{r}-c#{c}-m#{m}"
-                        $master_node_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
-                        $master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
+                        master_node_vm_name = "k8s-r#{r}-c#{c}-m#{m}"
+                        master_node_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
+                        master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
+                        
                         if m == 1
-                            $master_node_m1_vm_ipv4_address = $master_node_vm_ipv4_address
+                            $master_node_m1 = master_node
+                            $master_node_m1_vm_hostname = master_node_vm_hostname
+                            $master_node_m1_vm_ipv4_address = master_node_vm_ipv4_address
                         end # if m == 1
 
                         master_node.vm.box = "ubuntu/focal64"
-                        #master_node.vm.hostname = "k8s-r#{r}-c#{c}-m#{m}"
                         master_node.vm.hostname = $master_node_vm_hostname
                         
+                        if debug
+                            puts "Current master_node object id = #{master_node.object_id}"
+                            #puts "Current master_node instance variables = #{master_node.instance_variables}"
+                            #puts "Current master_node methods = #{master_node.methods}"
+                            puts "Current master_node.vm = #{master_node.vm}"
+
+                            puts "master_node_m1 object id = #{$master_node_m1.object_id}"
+                            #puts "master_node_m1 instance variables = #{$master_node_m1.instance_variables}"
+                            #puts "master_node_m1 methods = #{$master_node_m1.methods}"
+                            puts "master_node_m1.vm = #{$master_node_m1.vm}"
+                        end # if debug
+                        
                         # IPv4 addresses allocated from start of address range after reserved addresses
-                        #master_node.vm.network "private_network", ip: "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}", netmask: "255.255.255.0"
-                        master_node.vm.network("private_network", ip: $master_node_vm_ipv4_address, netmask: "255.255.255.0")
+                        master_node.vm.network("private_network", ip: master_node_vm_ipv4_address, netmask: "255.255.255.0")
                         master_node.vm.provider("virtualbox") do |vb|
                             vb.gui = true
-                            #vb.name = "k8s-r#{r}-c#{c}-m#{m}"
-                            vb.name = $master_node_vm_name
+                            vb.name = master_node_vm_name
                             vb.memory = 4096
                             vb.cpus = 2            
                         end #vb
 
                         master_node.vm.disk(:disk, size: "70GB", primary: true)
 
-                        master_node.vm.provision("shell") do |s|
-                            s.path = "k8s-master.sh"
-                            s.args = [$master_node_m1_vm_ipv4_address]
-                        end # s
-                    end # master_node
+                        master_node.vm.provision "shell", inline: <<-EOF
+                            echo "Configuring $(hostname)"
+                            echo "master_node_m1_vm_ipv4_address = #{$master_node_m1_vm_ipv4_address}"
+                            
+                            # Update and upgrade apt packages
+                            sudo apt update && apt upgrade -y
+                            
+                            # Update snap packages
+                            sudo snap refresh
+                            
+                            # Install MicroK8s snap package
+                            sudo snap install microk8s --classic
+
+                            # Add user vagrant to user group microk8s
+                            sudo usermod -a -G microk8s vagrant
+                            
+                            # Check if MicroK8s is running - wait until process is ready
+                            microk8s status --wait-ready
+                            microk8s kubectl cluster-info
+                            
+                            # Install kubectl snap package
+                            sudo snap install kubectl --classic
+
+                            # Configure kubectl
+                            cd ~
+                            echo "Current working directory: $(pwd)"
+                            #mkdir .kube
+                            cd .kube
+
+                            # TODO: this is not going to have the right IP address to the API server - it will use the adapter connected to the NAT
+                            microk8s config > config
+                        EOF
+
+                        # if m != 1
+                        #     # Generate node token on main master node                            
+                        #     $master_node_m1.vm.provision "shell", inline: <<-EOF
+                        #         echo "Generating MicroK8s new node token for #{master_node_vm_hostname}"
+                        #         microk8s add-node | grep #{$master_node_m1_vm_ipv4_address} | tee /vagrant/add_k8s_node_#{master_node_vm_hostname}
+                        #     EOF
+
+                        #     # Join cluster on new node using generated token
+                        #     master_node.vm.provision "shell", inline: <<-EOF
+                        #         echo "Joining MicroK8s cluster using new node token"
+                        #         bash -x /vagrant/add_k8s_node_#{master_node_vm_hostname}
+                        #     EOF
+                        # end # if m != 1
+                    end # master_node config.vm.define
                 end # m
             end # if deploy_k8s_master
 
@@ -147,7 +211,7 @@ Vagrant.configure("2") do |config|
                         worker_node.vm.provision("shell") do |s|
                             s.inline = "echo Configuring k8s-r#{r}-c#{c}-w#{w}"
                         end # s
-                    end # worker_node
+                    end # worker_node config.vm.define
                 end # w
             end # if deploy_k8s_worker
         end # c
