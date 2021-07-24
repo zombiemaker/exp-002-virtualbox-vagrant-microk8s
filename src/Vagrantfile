@@ -5,14 +5,20 @@
 # that is linked to the VM host machine's directory where the vagrant program was executed.
 # This enables the VM guest OS to access and share files between VMs
 
-debug = false
-deploy_elb = false
-deploy_edns = false
-deploy_k8s_master = true
-deploy_k8s_worker = false
+require 'yaml'
+require 'erb'
+
+config_yaml = File.open('config.yaml').read
+config = YAML.load( ERB.new(config_yaml).result)
+
+debug = config["activation-options"]["debug"]
+deploy_elb = config["activation-options"]["deploy_elb"]
+deploy_edns = config["activation-options"]["deploy_edns"]
+deploy_k8s_master = config["activation-options"]["deploy_k8s_master"]
+deploy_k8s_worker = config["activation-options"]["deploy_k8s_worker"]
 
 $home_dir = File.expand_path('~')
-$vagrant_runtime_directory = "/vagrant/.runtime"
+$vagrant_runtime_directory = config["vm"]["vagrant_runtime_directory"]
 
 # Assuming that a cluster is needed for a separate geographic region  or availability zone
 # Each cluster needs:
@@ -22,29 +28,29 @@ $vagrant_runtime_directory = "/vagrant/.runtime"
 #   - Kubernetes master nodes
 #   - Kubernetes worker nodes
 
-regions = ["us-east"]  # ["us-east", "us-west", "eu-east", etc....]
+regions = config["k8s-clusters"]["regions"]
 number_of_regions = regions.size
-number_of_elbs_per_region = 1
-number_of_ednss_per_region = 1
-number_of_clusters_per_region = 1
+number_of_elbs_per_region = config["k8s-clusters"]["number_of_elbs_per_region"]
+number_of_ednss_per_region = config["k8s-clusters"]["number_of_ednss_per_region"]
+number_of_clusters_per_region = config["k8s-clusters"]["number_of_clusters_per_region"]
+number_of_azs_per_region = config["k8s-clusters"]["number_of_azs_per_region"]
 number_of_clusters = number_of_regions * number_of_clusters_per_region
-number_of_azs_per_region = 3
 
 # Master nodes and worker nodes will be in the same subnet
 # Total number of master and worker nodes cannot exceed subnet capacity (including addresses reserved for network services)
 # Distribute nodes across number of AZs
 # Each K8s cluster will use 1 IPv4 class C address range (for this design)
 # Estimate 100 pods per worker node
-master_nodes_per_cluster = 3
-worker_nodes_per_cluster = 0
-number_ip_addresses_reserved_per_cluster = 5
+master_nodes_per_cluster = config["k8s-clusters"]["master_nodes_per_cluster"]
+worker_nodes_per_cluster = config["k8s-clusters"]["worker_nodes_per_cluster"]
+number_ip_addresses_reserved_per_cluster = config["k8s-clusters"]["number_ip_addresses_reserved_per_cluster"]
 
 Vagrant.require_version ">= 1.3.5"
-Vagrant.configure("2") do |config|
+Vagrant.configure("2") do |cfg|
 
     # Configurations for all VMs
     # Enable SSH authentication using username and password
-    config.vm.provision "shell", inline: <<-EOF
+    cfg.vm.provision "shell", inline: <<-EOF
         echo "Changing sshd configuration to allow username and password authentication"
         sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
 
@@ -61,20 +67,21 @@ Vagrant.configure("2") do |config|
             (1..number_of_elbs_per_region).each do |elb_id|
                 # Cluster BGP Router / External Load Balancer (assuming 2 ELBs per cluster)
                 
-                config.vm.define("k8s-r#{r}-elb#{elb_id}") do |elb|
+                cfg.vm.define("k8s-r#{r}-elb#{elb_id}") do |elb|
                     elb_vm_name = "k8s-r#{r}-elb#{elb_id}"
                     elb_vm_hostname = "k8s-r#{r}-elb#{elb_id}"
                     elb_vm_ipv4_address = "10.#{r}.0.#{elb_id}"
-                
+                    
+
                     elb.vm.box = "ubuntu/focal64"
                     elb.vm.hostname = elb_vm_hostname
                     elb.vm.network("private_network", ip: elb_vm_ipv4_address, netmask: "255.255.255.0")
                     elb.vm.disk(:disk, size: "20GB", primary: true)
                     elb.vm.provider("virtualbox") do |vb|
-                        vb.gui = true
                         vb.name = elb_vm_name
-                        vb.memory = 2048
-                        vb.cpus = 1            
+                        vb.gui = config["elb-vm"]["virtualbox"]["gui"]
+                        vb.memory = config["elb-vm"]["virtualbox"]["memory"]
+                        vb.cpus = config["elb-vm"]["virtualbox"]["cpus"]
                     end # vb
 
                     elb.vm.provision "shell", inline: <<-EOF
@@ -95,7 +102,7 @@ Vagrant.configure("2") do |config|
         # Cluster External DNS Authoritative Servers
         if deploy_edns
             (1..number_of_ednss_per_region).each do |edns_id|
-                config.vm.define("k8s-r#{r}-edns#{edns_id}") do |edns|
+                cfg.vm.define("k8s-r#{r}-edns#{edns_id}") do |edns|
                     edns_vm_name = "k8s-r#{r}-edns#{edns_id}"
                     edns_vm_hostname = "k8s-r#{r}-edns#{edns_id}"
                     edns_vm_ipv4_address = "10.#{r}.0.#{number_of_elbs_per_region + edns_id}"
@@ -105,10 +112,10 @@ Vagrant.configure("2") do |config|
                     edns.vm.network("private_network", ip: edns_vm_ipv4_address, netmask: "255.255.255.0")
                     edns.vm.disk(:disk, size: "20GB", primary: true)
                     edns.vm.provider("virtualbox") do |vb|
-                        vb.gui = true
                         vb.name = edns_vm_name
-                        vb.memory = 2048
-                        vb.cpus = 1            
+                        vb.gui = config["edns-vm"]["virtualbox"]["gui"]
+                        vb.memory = config["edns-vm"]["virtualbox"]["memory"]
+                        vb.cpus = config["edns-vm"]["virtualbox"]["cpus"]            
                     end # vb
 
                     edns.vm.provision "shell", inline: <<-EOF
@@ -135,7 +142,7 @@ Vagrant.configure("2") do |config|
                     $master_node_m1_vm_hostname = nil
                     $master_node_m1_vm_ipv4_address = nil
 
-                    config.vm.define("k8s-r#{r}-c#{c}-m#{m}") do |master_node|
+                    cfg.vm.define("k8s-r#{r}-c#{c}-m#{m}") do |master_node|
                         master_node_vm_name = "k8s-r#{r}-c#{c}-m#{m}"
                         master_node_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
                         master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
@@ -147,10 +154,10 @@ Vagrant.configure("2") do |config|
                         master_node.vm.network("private_network", ip: master_node_vm_ipv4_address, netmask: "255.255.255.0")
                         master_node.vm.disk(:disk, size: "40GB", primary: true)
                         master_node.vm.provider("virtualbox") do |vb|
-                            vb.gui = true
                             vb.name = master_node_vm_name
-                            vb.memory = 4096
-                            vb.cpus = 2            
+                            vb.gui = config["k8s-master-vm"]["virtualbox"]["gui"]
+                            vb.memory = config["k8s-master-vm"]["virtualbox"]["memory"]
+                            vb.cpus = config["k8s-master-vm"]["virtualbox"]["cpus"]      
                         end #vb
 
                         if m == 1
@@ -251,7 +258,7 @@ Vagrant.configure("2") do |config|
             # Kubernetes Cluster Worker Nodes
             if deploy_k8s_worker
                 (1..worker_nodes_per_cluster).each do |w|
-                    config.vm.define("k8s-r#{r}-c#{c}-w#{w}") do |worker_node|
+                    cfg.vm.define("k8s-r#{r}-c#{c}-w#{w}") do |worker_node|
                         worker_node_vm_name = "k8s-r#{r}-c#{c}-w#{w}"
                         worker_node_vm_hostname = "k8s-r#{r}-c#{c}-w#{w}"
                         worker_node_vm_ipv4_address = "10.#{r}.#{c}.#{255-w}"
@@ -263,10 +270,10 @@ Vagrant.configure("2") do |config|
                         worker_node.vm.network("private_network", ip: worker_node_vm_ipv4_address, netmask: "255.255.255.0")
                         worker_node.vm.disk(:disk, size: "70GB", primary: true)
                         worker_node.vm.provider("virtualbox") do |vb|
-                            vb.gui = true
                             vb.name = worker_node_vm_name
-                            vb.memory = 4096
-                            vb.cpus = 2            
+                            vb.gui = config["k8s-worker-vm"]["virtualbox"]["gui"]
+                            vb.memory = config["k8s-worker-vm"]["virtualbox"]["memory"]
+                            vb.cpus = config["k8s-worker-vm"]["virtualbox"]["cpus"]         
                         end # vb
 
                         worker_node.vm.provision "shell", inline: <<-EOF
