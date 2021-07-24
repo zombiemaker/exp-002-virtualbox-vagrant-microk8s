@@ -1,17 +1,41 @@
 # Basic Commands
 
-## Create landscape
+## Create landscape using PowerShell script
 
 * From PowerShell
     ```
     scripts\up.ps1
     ```
 
-## Destroy landscape
+## Destroy landscape using PowerShell script
 
 * From PowerShell
     ```
     scripts\down.ps1
+    ```
+
+## Create landscape without PowerShell script
+
+* From PowerShell
+    ```
+    cd src
+    vagrant up
+    ```
+
+## Halt landscape without destroying VMs without PowerShell script
+
+* From PowerShell
+    ```
+    cd src
+    vagrant halt
+    ```
+
+## Destroy landscape without PowerShell script
+
+* From PowerShell
+    ```
+    cd src
+    vagrant destroy -f
     ```
 
 ## Landscape status

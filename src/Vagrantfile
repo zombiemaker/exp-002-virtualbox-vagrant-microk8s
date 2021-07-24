@@ -33,7 +33,7 @@ number_of_azs_per_region = 3
 # Each K8s cluster will use 1 IPv4 class C address range (for this design)
 # Estimate 100 pods per worker node
 master_nodes_per_cluster = 3
-worker_nodes_per_cluster = 1
+worker_nodes_per_cluster = 0
 number_ip_addresses_reserved_per_cluster = 5
 
 
@@ -60,17 +60,20 @@ Vagrant.configure("2") do |config|
                 # Cluster BGP Router / External Load Balancer (assuming 2 ELBs per cluster)
                 
                 config.vm.define("k8s-r#{r}-elb#{elb_id}") do |elb|
+                    elb_vm_name = "k8s-r#{r}-elb#{elb_id}"
+                    elb_vm_hostname = "k8s-r#{r}-elb#{elb_id}"
+                    elb_vm_ipv4_address = "10.#{r}.0.#{elb_id}"
+                
                     elb.vm.box = "ubuntu/focal64"
-                    elb.vm.hostname = "k8s-r#{r}-elb#{elb_id}"
-                    elb.vm.network("private_network", ip: "10.#{r}.0.#{elb_id}", netmask: "255.255.255.0")
+                    elb.vm.hostname = elb_vm_hostname
+                    elb.vm.network("private_network", ip: elb_vm_ipv4_address, netmask: "255.255.255.0")
+                    elb.vm.disk(:disk, size: "20GB", primary: true)
                     elb.vm.provider("virtualbox") do |vb|
                         vb.gui = true
-                        vb.name = "k8s-r#{r}-elb#{elb_id}"
+                        vb.name = elb_vm_name
                         vb.memory = 2048
                         vb.cpus = 1            
                     end # vb
-
-                    elb.vm.disk(:disk, size: "70GB", primary: true)
 
                     elb.vm.provision "shell", inline: <<-EOF
                         echo Configuring k8s-r#{r}-elb#{elb_id}"
@@ -85,17 +88,20 @@ Vagrant.configure("2") do |config|
         if deploy_edns
             (1..number_of_ednss_per_region).each do |edns_id|
                 config.vm.define("k8s-r#{r}-edns#{edns_id}") do |edns|
+                    edns_vm_name = "k8s-r#{r}-edns#{edns_id}"
+                    edns_vm_hostname = "k8s-r#{r}-edns#{edns_id}"
+                    edns_vm_ipv4_address = "10.#{r}.0.#{number_of_elbs_per_region + edns_id}"
+                
                     edns.vm.box = "ubuntu/focal64"
-                    edns.vm.hostname = "k8s-r#{r}-edns#{edns_id}"
-                    edns.vm.network("private_network", ip: "10.#{r}.0.#{number_of_elbs_per_region + edns_id}", netmask: "255.255.255.0")
+                    edns.vm.hostname = edns_vm_hostname
+                    edns.vm.network("private_network", ip: edns_vm_ipv4_address, netmask: "255.255.255.0")
+                    edns.vm.disk(:disk, size: "20GB", primary: true)
                     edns.vm.provider("virtualbox") do |vb|
                         vb.gui = true
-                        vb.name = "k8s-r#{r}-edns#{edns_id}"
+                        vb.name = edns_vm_name
                         vb.memory = 2048
                         vb.cpus = 1            
                     end # vb
-
-                    edns.vm.disk(:disk, size: "20GB", primary: true)
 
                     edns.vm.provision "shell", inline: <<-EOF
                         echo Configuring k8s-r#{r}-edns#{edns_id}
@@ -120,24 +126,12 @@ Vagrant.configure("2") do |config|
                         master_node_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
                         master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
                         
-                        if m == 1
-                            $master_node_m1 = master_node
-                            $master_node_m1_vm_hostname = master_node_vm_hostname
-                            $master_node_m1_vm_ipv4_address = master_node_vm_ipv4_address
-                        end # if m == 1
-
                         master_node.vm.box = "ubuntu/focal64"
                         master_node.vm.hostname = $master_node_vm_hostname
                         
-                        if debug
-                            puts "Current master_node object id = #{master_node.object_id}"
-                            puts "Current master_node.vm = #{master_node.vm}"
-                            puts "master_node_m1 object id = #{$master_node_m1.object_id}"
-                            puts "master_node_m1.vm = #{$master_node_m1.vm}"
-                        end # if debug
-                        
                         # IPv4 addresses allocated from start of address range after reserved addresses
                         master_node.vm.network("private_network", ip: master_node_vm_ipv4_address, netmask: "255.255.255.0")
+                        master_node.vm.disk(:disk, size: "40GB", primary: true)
                         master_node.vm.provider("virtualbox") do |vb|
                             vb.gui = true
                             vb.name = master_node_vm_name
@@ -145,10 +139,21 @@ Vagrant.configure("2") do |config|
                             vb.cpus = 2            
                         end #vb
 
-                        master_node.vm.disk(:disk, size: "40GB", primary: true)
+                        if m == 1
+                            $master_node_m1 = master_node
+                            $master_node_m1_vm_hostname = master_node_vm_hostname
+                            $master_node_m1_vm_ipv4_address = master_node_vm_ipv4_address
+                        end # if m == 1
 
+                        if debug
+                            puts "Current master_node object id = #{master_node.object_id}"
+                            puts "Current master_node.vm = #{master_node.vm}"
+                            puts "master_node_m1 object id = #{$master_node_m1.object_id}"
+                            puts "master_node_m1.vm = #{$master_node_m1.vm}"
+                        end # if debug
+                        
                         master_node.vm.provision "shell", inline: <<-EOF
-                            echo "Configuring $(hostname)"
+                            echo "Configuring #{master_node_vm_hostname}""
                             echo "master_node_m1_vm_ipv4_address = #{$master_node_m1_vm_ipv4_address}"
                             
                             # Update and upgrade apt packages
@@ -204,23 +209,26 @@ Vagrant.configure("2") do |config|
             if deploy_k8s_worker
                 (1..worker_nodes_per_cluster).each do |w|
                     config.vm.define("k8s-r#{r}-c#{c}-w#{w}") do |worker_node|
+                        worker_node_vm_name = "k8s-r#{r}-c#{c}-w#{w}"
+                        worker_node_vm_hostname = "k8s-r#{r}-c#{c}-w#{w}"
+                        worker_node_vm_ipv4_address = "10.#{r}.#{c}.#{255-w}"
+
                         worker_node.vm.box = "ubuntu/focal64"
-                        worker_node.vm.hostname = "k8s-r#{r}-c#{c}-w#{w}"
+                        worker_node.vm.hostname = worker_node_vm_hostname
 
                         # IPv4 addresses allocated from end of address range
-                        worker_node.vm.network("private_network", ip: "10.#{r}.#{c}.#{255-w}", netmask: "255.255.255.0")
+                        worker_node.vm.network("private_network", ip: worker_node_vm_ipv4_address, netmask: "255.255.255.0")
+                        worker_node.vm.disk(:disk, size: "70GB", primary: true)
                         worker_node.vm.provider("virtualbox") do |vb|
                             vb.gui = true
-                            vb.name = "k8s-r#{r}-c#{c}-w#{w}"
+                            vb.name = worker_node_vm_name
                             vb.memory = 4096
                             vb.cpus = 2            
                         end # vb
 
-                        worker_node.vm.disk(:disk, size: "70GB", primary: true)
-
-                        worker_node.vm.provision("shell") do |s|
-                            s.inline = "echo Configuring k8s-r#{r}-c#{c}-w#{w}"
-                        end # s
+                        worker_node.vm.provision "shell", inline: <<-EOF
+                            echo "Configuring #{worker_node_vm_hostname}"
+                        EOF
                     end # worker_node config.vm.define
                 end # w
             end # if deploy_k8s_worker
