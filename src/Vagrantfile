@@ -36,6 +36,7 @@ master_nodes_per_cluster = 3
 worker_nodes_per_cluster = 0
 number_ip_addresses_reserved_per_cluster = 5
 
+$vagrant_runtime_directory = "/vagrant/.runtime"
 
 Vagrant.require_version ">= 1.3.5"
 Vagrant.configure("2") do |config|
@@ -80,6 +81,13 @@ Vagrant.configure("2") do |config|
                         sudo apt update && apt upgrade -y
                         sudo apt install quagga-bgpd quagga-doc -y
                     EOF
+
+                    # Clean up ssh client fingerprint from previous runs
+                    # TODO: clean up ssh know_hosts in WSL
+                    elb.trigger.before :up do |trigger|
+                        home_dir = File.expand_path('~')
+                        `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{elb_vm_ipv4_address}"`
+                    end # trigger
                 end # elb config.vm.define
             end # elb_id
         end # if deploy_elb
@@ -107,6 +115,13 @@ Vagrant.configure("2") do |config|
                         echo Configuring k8s-r#{r}-edns#{edns_id}
                         sudo apt update && apt upgrade -y
                     EOF
+
+                    # Clean up ssh client fingerprint from previous runs
+                    # TODO: clean up ssh know_hosts in WSL
+                    edns.trigger.before :up do |trigger|
+                        home_dir = File.expand_path('~')
+                        `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{edns_vm_ipv4_address}"`
+                    end # trigger
                 end # edns config.vm.define
             end # edns_id
         end # if deploy_edns
@@ -153,7 +168,7 @@ Vagrant.configure("2") do |config|
                         end # if debug
                         
                         master_node.vm.provision "shell", inline: <<-EOF
-                            echo "Configuring #{master_node_vm_hostname}""
+                            echo "Configuring #{master_node_vm_hostname}"
                             echo "master_node_m1_vm_ipv4_address = #{$master_node_m1_vm_ipv4_address}"
                             
                             # Update and upgrade apt packages
@@ -181,26 +196,46 @@ Vagrant.configure("2") do |config|
                             cd .kube
 
                             # TODO: this is not going to have the right IP address to the API server - it will use the adapter connected to the NAT
-                            microk8s config > /vagrant/kubectl-config
-                            sudo sed -i 's+server: https://10.0.2.15:16443+https://10.1.1.6:16443+g' /vagrant/kubectl-config
+                            if [ ! -d "#{$vagrant_runtime_directory}" ]
+                            then
+                                echo "Directory #{$vagrant_runtime_directory} does not exist...creating"
+                                mkdir #{$vagrant_runtime_directory}
+                            fi
+
+                            microk8s config > #{$vagrant_runtime_directory}/kubectl-config
+                            sudo sed -i 's+server: https://10.0.2.15:16443+https://10.1.1.6:16443+g' #{$vagrant_runtime_directory}/kubectl-config
                             whoami
                             pwd
-                            cp /vagrant/kubectl-config ~/.kube/config
+                            cp #{$vagrant_runtime_directory}/kubectl-config ~/.kube/config
                         EOF
 
                         if m != 1
                             # Generate node token on main master node                            
                             $master_node_m1.vm.provision "shell", inline: <<-EOF
                                 echo "Generating MicroK8s new node token for #{master_node_vm_hostname}"
-                                microk8s add-node | grep #{$master_node_m1_vm_ipv4_address} | tee /vagrant/add_k8s_node_#{master_node_vm_hostname}
+                                
+                                if [ ! -d "#{$vagrant_runtime_directory}" ]
+                                then
+                                    echo "Directory #{$vagrant_runtime_directory} does not exist...creating"
+                                    mkdir #{$vagrant_runtime_directory}
+                                fi
+                                
+                                microk8s add-node | grep #{$master_node_m1_vm_ipv4_address} | tee #{$vagrant_runtime_directory}/add_k8s_node_#{master_node_vm_hostname}
                             EOF
 
                             # Join cluster on new node using generated token
                             master_node.vm.provision "shell", inline: <<-EOF
                                 echo "Joining MicroK8s cluster using new node token"
-                                bash -x /vagrant/add_k8s_node_#{master_node_vm_hostname}
+                                bash -x #{$vagrant_runtime_directory}/add_k8s_node_#{master_node_vm_hostname}
                             EOF
                         end # if m != 1
+
+                        # Clean up ssh client fingerprint from previous runs
+                        # TODO: clean up ssh know_hosts in WSL
+                        master_node.trigger.before :up do |trigger|
+                            home_dir = File.expand_path('~')
+                            `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{master_node_vm_ipv4_address}"`
+                        end # trigger
                     end # master_node config.vm.define
                 end # m
             end # if deploy_k8s_master
@@ -229,6 +264,12 @@ Vagrant.configure("2") do |config|
                         worker_node.vm.provision "shell", inline: <<-EOF
                             echo "Configuring #{worker_node_vm_hostname}"
                         EOF
+                        # Clean up ssh client fingerprint from previous runs
+                        # TODO: clean up ssh know_hosts in WSL
+                        worker_node.trigger.before :up do |trigger|
+                            home_dir = File.expand_path('~')
+                            `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{worker_node_vm_ipv4_address}"`
+                        end # trigger
                     end # worker_node config.vm.define
                 end # w
             end # if deploy_k8s_worker

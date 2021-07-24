@@ -51,13 +51,22 @@
     k8s-r1-c1-m2              running (virtualbox)
     ```
 
-## SSH into VM
+## SSH into VM using vagrant ssh
 
 * This example uses the VM k8s-r1-c1-m1
 * From PowerShell
     ```
     cd src
     vagrant ssh k8s-r1-c1-m1
+    ```
+
+## SSH into VM using Windows OpenSSH
+
+* This example uses the VM k8s-r1-c1-m1
+* Default username / password : vagrant / vagrant
+* From PowerShell
+    ```
+    ssh vagrant@k8s-r1-c1-m1
     ```
 
 ## SSH remote command to get MicroK8s status 
