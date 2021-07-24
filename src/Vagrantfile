@@ -73,7 +73,7 @@ Vagrant.configure("2") do |cfg|
                     elb_vm_ipv4_address = "10.#{r}.0.#{elb_id}"
                     
 
-                    elb.vm.box = "ubuntu/focal64"
+                    elb.vm.box = config["elb-vm"]["vagrant-box"]
                     elb.vm.hostname = elb_vm_hostname
                     elb.vm.network("private_network", ip: elb_vm_ipv4_address, netmask: "255.255.255.0")
                     elb.vm.disk(:disk, size: "20GB", primary: true)
@@ -107,7 +107,7 @@ Vagrant.configure("2") do |cfg|
                     edns_vm_hostname = "k8s-r#{r}-edns#{edns_id}"
                     edns_vm_ipv4_address = "10.#{r}.0.#{number_of_elbs_per_region + edns_id}"
                 
-                    edns.vm.box = "ubuntu/focal64"
+                    edns.vm.box = config["edns-vm"]["vagrant-box"]
                     edns.vm.hostname = edns_vm_hostname
                     edns.vm.network("private_network", ip: edns_vm_ipv4_address, netmask: "255.255.255.0")
                     edns.vm.disk(:disk, size: "20GB", primary: true)
@@ -147,7 +147,7 @@ Vagrant.configure("2") do |cfg|
                         master_node_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
                         master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
                         
-                        master_node.vm.box = "ubuntu/focal64"
+                        master_node.vm.box = config["k8s-master-vm"]["vagrant-box"]
                         master_node.vm.hostname = $master_node_vm_hostname
                         
                         # IPv4 addresses allocated from start of address range after reserved addresses
@@ -263,7 +263,7 @@ Vagrant.configure("2") do |cfg|
                         worker_node_vm_hostname = "k8s-r#{r}-c#{c}-w#{w}"
                         worker_node_vm_ipv4_address = "10.#{r}.#{c}.#{255-w}"
 
-                        worker_node.vm.box = "ubuntu/focal64"
+                        worker_node.vm.box = config["k8s-worker-vm"]["vagrant-box"]
                         worker_node.vm.hostname = worker_node_vm_hostname
 
                         # IPv4 addresses allocated from end of address range
