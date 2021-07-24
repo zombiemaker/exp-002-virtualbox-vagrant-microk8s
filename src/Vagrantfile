@@ -86,7 +86,7 @@ Vagrant.configure("2") do |config|
                     # TODO: clean up ssh know_hosts in WSL
                     elb.trigger.before :up do |trigger|
                         home_dir = File.expand_path('~')
-                        `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{elb_vm_ipv4_address}"`
+                        trigger.run = { inline: "ssh-keygen -f \"#{home_dir}/.ssh/known_hosts\" -R \"#{elb_vm_ipv4_address}\"" }
                     end # trigger
                 end # elb config.vm.define
             end # elb_id
@@ -120,7 +120,7 @@ Vagrant.configure("2") do |config|
                     # TODO: clean up ssh know_hosts in WSL
                     edns.trigger.before :up do |trigger|
                         home_dir = File.expand_path('~')
-                        `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{edns_vm_ipv4_address}"`
+                        trigger.run = { inline: "ssh-keygen -f \"#{home_dir}/.ssh/known_hosts\" -R \"#{edns_vm_ipv4_address}\"" }
                     end # trigger
                 end # edns config.vm.define
             end # edns_id
@@ -168,45 +168,55 @@ Vagrant.configure("2") do |config|
                         end # if debug
                         
                         master_node.vm.provision "shell", inline: <<-EOF
+                            echo "=================================================="
                             echo "Configuring #{master_node_vm_hostname}"
                             echo "master_node_m1_vm_ipv4_address = #{$master_node_m1_vm_ipv4_address}"
                             
                             # Update and upgrade apt packages
-                            sudo apt update && apt upgrade -y
+                            echo "--------------------------------------------------"
+                            echo "Updating / upgrading apt packages
+                            sudo apt-get update && apt-get upgrade -y
                             
                             # Update snap packages
+                            echo "--------------------------------------------------"
+                            echo "Refreshing Ubuntu snap packages"
                             sudo snap refresh
                             
                             # Install MicroK8s snap package
+                            echo "--------------------------------------------------"
+                            echo "Installing MicroK8s Ubuntu snap packages"
                             sudo snap install microk8s --classic
 
                             # Add user vagrant to user group microk8s
                             sudo usermod -a -G microk8s vagrant
                             
                             # Check if MicroK8s is running - wait until process is ready
+                            echo "--------------------------------------------------"
+                            echo "Checking MicroK8s status"
                             microk8s status --wait-ready
                             microk8s kubectl cluster-info
                             
                             # Install kubectl snap package
+                            echo "--------------------------------------------------"
+                            echo "Installing kubectl snap package"
                             sudo snap install kubectl --classic
 
-                            # Configure kubectl
-                            cd ~
-                            echo "Current working directory: $(pwd)"
-                            cd .kube
+                            echo "--------------------------------------------------"
+                            echo "Creating kubectl config file for cluster"
 
-                            # TODO: this is not going to have the right IP address to the API server - it will use the adapter connected to the NAT
                             if [ ! -d "#{$vagrant_runtime_directory}" ]
                             then
                                 echo "Directory #{$vagrant_runtime_directory} does not exist...creating"
                                 mkdir #{$vagrant_runtime_directory}
                             fi
-
+                            
                             microk8s config > #{$vagrant_runtime_directory}/kubectl-config
                             sudo sed -i 's+server: https://10.0.2.15:16443+https://10.1.1.6:16443+g' #{$vagrant_runtime_directory}/kubectl-config
-                            whoami
-                            pwd
-                            cp #{$vagrant_runtime_directory}/kubectl-config ~/.kube/config
+                            
+                            echo "--------------------------------------------------"
+                            echo "Copying kubectl config for cluster to ~vagrant/.kube"
+                            cp #{$vagrant_runtime_directory}/kubectl-config ~vagrant/.kube/config
+                            chown vagrant:vagrant ~vagrant/.kube/config
                         EOF
 
                         if m != 1
@@ -234,7 +244,7 @@ Vagrant.configure("2") do |config|
                         # TODO: clean up ssh know_hosts in WSL
                         master_node.trigger.before :up do |trigger|
                             home_dir = File.expand_path('~')
-                            `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{master_node_vm_ipv4_address}"`
+                            trigger.run = { inline: "ssh-keygen -f \"#{home_dir}/.ssh/known_hosts\" -R \"#{master_node_vm_ipv4_address}\"" }
                         end # trigger
                     end # master_node config.vm.define
                 end # m
@@ -268,7 +278,7 @@ Vagrant.configure("2") do |config|
                         # TODO: clean up ssh know_hosts in WSL
                         worker_node.trigger.before :up do |trigger|
                             home_dir = File.expand_path('~')
-                            `ssh-keygen -f "#{home_dir}/.ssh/known_hosts" -R "#{worker_node_vm_ipv4_address}"`
+                            trigger.run = { inline: "ssh-keygen -f \"#{home_dir}/.ssh/known_hosts\" -R \"#{worker_node_vm_ipv4_address}\"" }
                         end # trigger
                     end # worker_node config.vm.define
                 end # w
