@@ -121,4 +121,5 @@
         token: ZExoZnIxK3paasdfasdfdfdfdswereiY0c4VVpZWEdOVWF6OD0K
     ```
 * Save the response to a file in [your Windows user home directory]\.kube (default Kubernetes cluster should be saved in a file named "config")
-* Edit the "server: https://[ip address]:16443" in the file to use the IP address of the VM (e.g., 10.1.1.6).  MicroK8s configures Kubernetes to use the IP address of the network adapter that has the default route, which in this case, the adapter connected to VirtualBox NAT.
+* MicroK8s configures Kubernetes to use the IP address of the network adapter that has the default route, which in this case, the adapter connected to VirtualBox NAT
+* Edit the "server: https://[ip address]:16443" line in the file to use the IP address of the VM (e.g., 10.1.1.6).  

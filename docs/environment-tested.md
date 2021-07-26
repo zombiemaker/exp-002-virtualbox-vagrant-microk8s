@@ -6,7 +6,7 @@ These programs were tested on a computer system using the following components:
   * CPU:  16-cores / 32-threads
   * RAM:  128GB
   * Storage:  NVMe SSDs (for OS and programs) and SATA SSDs (for data)
-  * OS:  Microsoft Windows 10 Pro 20HD Build 19042.1110
+  * OS:  Microsoft Windows 10 Pro 21H1 Build 19043.1110
 * Microsoft Windows features installed
   * Microsoft Windows Containers feature
   * Microsoft Windows Virtual Machine Platform feature

@@ -1,4 +1,4 @@
-cd ..\vms
+cd ..\src
 
 vagrant halt
 vagrant destroy -f
