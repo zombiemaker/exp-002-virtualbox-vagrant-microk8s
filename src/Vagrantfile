@@ -151,7 +151,7 @@ Vagrant.configure("2") do |cfg|
                         master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
                         
                         master_node.vm.box = config["k8s-master-vm"]["vagrant-box"]
-                        master_node.vm.hostname = $master_node_vm_hostname
+                        master_node.vm.hostname = master_node_vm_hostname
                         
                         # IPv4 addresses allocated from start of address range after reserved addresses
                         master_node.vm.network("private_network", ip: master_node_vm_ipv4_address, netmask: "255.255.255.0")
@@ -256,10 +256,16 @@ Vagrant.configure("2") do |cfg|
                         end # if m != 1
 
                         # Clean up ssh client fingerprint from previous runs
-                        # TODO: clean up ssh know_hosts in WSL
+                        # TODO: clean up ssh known_hosts in WSL
                         master_node.trigger.before :up do |trigger|
                             trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{master_node_vm_ipv4_address}\"" }
-                        end # trigger
+                        end # trigger.before up
+
+                        # Reboot after
+                        master_node.trigger.after :up do |trigger|
+                            trigger.name = "Rebooting machine to apply hostname"
+                            trigger.run_remote = { inline: "sudo shutdown -r now" }
+                        end # trigger.before up
                     end # master_node config.vm.define
                 end # m
             end # if deploy_k8s_master
