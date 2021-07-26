@@ -1,7 +1,7 @@
 ---
 activation-options:
   debug: false
-  deploy_elb: true
+  deploy_elb: false
   deploy_edns: false
   deploy_k8s_master: true
   deploy_k8s_worker: true
