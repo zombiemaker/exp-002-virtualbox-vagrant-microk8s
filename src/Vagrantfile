@@ -219,7 +219,7 @@ Vagrant.configure("2") do |cfg|
                             fi
                             
                             microk8s config > #{$vagrant_runtime_directory}/kubectl-config
-                            sudo sed -i 's+server: https://10.0.2.15:16443+https://10.1.1.6:16443+g' #{$vagrant_runtime_directory}/kubectl-config
+                            sudo sed -i 's+server: https://10.0.2.15:16443+server: https://10.1.1.6:16443+g' #{$vagrant_runtime_directory}/kubectl-config
 
                             echo "kubectl config file #{$vagrant_runtime_directory}/kubectl-config"
                             cat #{$vagrant_runtime_directory}/kubectl-config
