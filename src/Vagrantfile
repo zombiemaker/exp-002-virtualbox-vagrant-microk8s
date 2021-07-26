@@ -41,8 +41,8 @@ number_of_clusters = number_of_regions * number_of_clusters_per_region
 # Distribute nodes across number of AZs
 # Each K8s cluster will use 1 IPv4 class C address range (for this design)
 # Estimate 100 pods per worker node
-master_nodes_per_cluster = config["k8s-clusters"]["master_nodes_per_cluster"]
-worker_nodes_per_cluster = config["k8s-clusters"]["worker_nodes_per_cluster"]
+k8s_masters_per_cluster = config["k8s-clusters"]["k8s_masters_per_cluster"]
+k8s_workers_per_cluster = config["k8s-clusters"]["k8s_workers_per_cluster"]
 number_ip_addresses_reserved_per_cluster = config["k8s-clusters"]["number_ip_addresses_reserved_per_cluster"]
 
 Vagrant.require_version ">= 1.3.5"
@@ -139,47 +139,47 @@ Vagrant.configure("2") do |cfg|
             # Kubernetes Cluster Master Nodes
             if deploy_k8s_master
                 puts "Configuring deployment of K8s cluster master nodes"
-                (1..master_nodes_per_cluster).each do |m|
+                (1..k8s_masters_per_cluster).each do |m|
                     # Define local variable to point cluster main master node
-                    $master_node_m1 = nil
-                    $master_node_m1_vm_hostname = nil
-                    $master_node_m1_vm_ipv4_address = nil
+                    $k8s_master_m1 = nil
+                    $k8s_master_m1_vm_hostname = nil
+                    $k8s_master_m1_vm_ipv4_address = nil
 
-                    cfg.vm.define("k8s-r#{r}-c#{c}-m#{m}") do |master_node|
-                        master_node_vm_name = "k8s-r#{r}-c#{c}-m#{m}"
-                        master_node_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
-                        master_node_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
+                    cfg.vm.define("k8s-r#{r}-c#{c}-m#{m}") do |k8s_master|
+                        k8s_master_vm_name = "k8s-r#{r}-c#{c}-m#{m}"
+                        k8s_master_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
+                        k8s_master_vm_ipv4_address = "10.#{r}.#{c}.#{m + number_ip_addresses_reserved_per_cluster}"
                         
-                        master_node.vm.box = config["k8s-master-vm"]["vagrant-box"]
-                        master_node.vm.hostname = master_node_vm_hostname
+                        k8s_master.vm.box = config["k8s-master-vm"]["vagrant-box"]
+                        k8s_master.vm.hostname = k8s_master_vm_hostname
                         
                         # IPv4 addresses allocated from start of address range after reserved addresses
-                        master_node.vm.network("private_network", ip: master_node_vm_ipv4_address, netmask: "255.255.255.0")
-                        master_node.vm.disk(:disk, size: "40GB", primary: true)
-                        master_node.vm.provider("virtualbox") do |vb|
-                            vb.name = master_node_vm_name
+                        k8s_master.vm.network("private_network", ip: k8s_master_vm_ipv4_address, netmask: "255.255.255.0")
+                        k8s_master.vm.disk(:disk, size: "40GB", primary: true)
+                        k8s_master.vm.provider("virtualbox") do |vb|
+                            vb.name = k8s_master_vm_name
                             vb.gui = config["k8s-master-vm"]["virtualbox"]["gui"]
                             vb.memory = config["k8s-master-vm"]["virtualbox"]["memory"]
                             vb.cpus = config["k8s-master-vm"]["virtualbox"]["cpus"]      
                         end #vb
 
                         if m == 1
-                            $master_node_m1 = master_node
-                            $master_node_m1_vm_hostname = master_node_vm_hostname
-                            $master_node_m1_vm_ipv4_address = master_node_vm_ipv4_address
+                            $k8s_master_m1 = k8s_master
+                            $k8s_master_m1_vm_hostname = k8s_master_vm_hostname
+                            $k8s_master_m1_vm_ipv4_address = k8s_master_vm_ipv4_address
                         end # if m == 1
 
                         if debug
-                            puts "Current master_node object id = #{master_node.object_id}"
-                            puts "Current master_node.vm = #{master_node.vm}"
-                            puts "master_node_m1 object id = #{$master_node_m1.object_id}"
-                            puts "master_node_m1.vm = #{$master_node_m1.vm}"
+                            puts "Current k8s_master object id = #{k8s_master.object_id}"
+                            puts "Current k8s_master.vm = #{k8s_master.vm}"
+                            puts "k8s_master_m1 object id = #{$k8s_master_m1.object_id}"
+                            puts "k8s_master_m1.vm = #{$k8s_master_m1.vm}"
                         end # if debug
                         
-                        master_node.vm.provision "shell", inline: <<-EOF
+                        k8s_master.vm.provision "shell", inline: <<-EOF
                             echo "=================================================="
-                            echo "Configuring #{master_node_vm_hostname}"
-                            echo "master_node_m1_vm_ipv4_address = #{$master_node_m1_vm_ipv4_address}"
+                            echo "Configuring #{k8s_master_vm_hostname}"
+                            echo "k8s_master_m1_vm_ipv4_address = #{$k8s_master_m1_vm_ipv4_address}"
                             
                             # Update and upgrade apt packages
                             echo "--------------------------------------------------"
@@ -219,7 +219,7 @@ Vagrant.configure("2") do |cfg|
                             fi
                             
                             microk8s config > #{$vagrant_runtime_directory}/kubectl-config
-                            sudo sed -i 's+server: https://10.0.2.15:16443+server: https://#{$master_node_m1_vm_ipv4_address}:16443+g' #{$vagrant_runtime_directory}/kubectl-config
+                            sudo sed -i 's+server: https://10.0.2.15:16443+server: https://#{$k8s_master_m1_vm_ipv4_address}:16443+g' #{$vagrant_runtime_directory}/kubectl-config
 
                             echo "kubectl config file #{$vagrant_runtime_directory}/kubectl-config"
                             cat #{$vagrant_runtime_directory}/kubectl-config
@@ -237,37 +237,37 @@ Vagrant.configure("2") do |cfg|
 
                         if m != 1
                             # Generate node token on main master node                            
-                            $master_node_m1.vm.provision "shell", inline: <<-EOF
-                                echo "Generating MicroK8s new node token for #{master_node_vm_hostname}"
+                            $k8s_master_m1.vm.provision "shell", inline: <<-EOF
+                                echo "Generating MicroK8s new node token for #{k8s_master_vm_hostname}"
                                 
                                 if [[ ! -d "#{$vagrant_runtime_directory}" ]]; then
                                     echo "Directory #{$vagrant_runtime_directory} does not exist...creating"
                                     mkdir #{$vagrant_runtime_directory}
                                 fi
                                 
-                                microk8s add-node | grep #{$master_node_m1_vm_ipv4_address} | tee #{$vagrant_runtime_directory}/add_k8s_node_#{master_node_vm_hostname}
+                                microk8s add-node | grep #{$k8s_master_m1_vm_ipv4_address} | tee #{$vagrant_runtime_directory}/add_k8s_node_#{k8s_master_vm_hostname}
                             EOF
 
                             # Join cluster on new node using generated token
-                            master_node.vm.provision "shell", inline: <<-EOF
+                            k8s_master.vm.provision "shell", inline: <<-EOF
                                 echo "Joining MicroK8s cluster using new node token"
-                                bash -x #{$vagrant_runtime_directory}/add_k8s_node_#{master_node_vm_hostname}
+                                bash -x #{$vagrant_runtime_directory}/add_k8s_node_#{k8s_master_vm_hostname}
                             EOF
                         end # if m != 1
 
                         # Clean up ssh client fingerprint from previous runs
                         # TODO: clean up ssh known_hosts in WSL
-                        master_node.trigger.before :up do |trigger|
-                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{master_node_vm_ipv4_address}\"" }
+                        k8s_master.trigger.before :up do |trigger|
+                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{k8s_master_vm_ipv4_address}\"" }
                         end # trigger.before up
 
                         # Reboot after
-                        master_node.trigger.after :up do |trigger|
+                        k8s_master.trigger.after :up do |trigger|
                             trigger.name = "Rebooting machine to apply hostname"
                             # ISSUE: Sometimes VM hangs on reboot
                             trigger.run_remote = { inline: "sudo shutdown -r now" }
                         end # trigger.after up
-                    end # master_node config.vm.define
+                    end # k8s_master config.vm.define
                 end # m
             end # if deploy_k8s_master
 
@@ -275,41 +275,41 @@ Vagrant.configure("2") do |cfg|
             if deploy_k8s_worker
                 puts "Configuring deployment of K8s cluster worker nodes"
 
-                (1..worker_nodes_per_cluster).each do |w|
-                    cfg.vm.define("k8s-r#{r}-c#{c}-w#{w}") do |worker_node|
-                        worker_node_vm_name = "k8s-r#{r}-c#{c}-w#{w}"
-                        worker_node_vm_hostname = "k8s-r#{r}-c#{c}-w#{w}"
-                        worker_node_vm_ipv4_address = "10.#{r}.#{c}.#{255-w}"
+                (1..k8s_workers_per_cluster).each do |w|
+                    cfg.vm.define("k8s-r#{r}-c#{c}-w#{w}") do |k8s_worker|
+                        k8s_worker_vm_name = "k8s-r#{r}-c#{c}-w#{w}"
+                        k8s_worker_vm_hostname = "k8s-r#{r}-c#{c}-w#{w}"
+                        k8s_worker_vm_ipv4_address = "10.#{r}.#{c}.#{255-w}"
 
-                        worker_node.vm.box = config["k8s-worker-vm"]["vagrant-box"]
-                        worker_node.vm.hostname = worker_node_vm_hostname
+                        k8s_worker.vm.box = config["k8s-worker-vm"]["vagrant-box"]
+                        k8s_worker.vm.hostname = k8s_worker_vm_hostname
 
                         # IPv4 addresses allocated from end of address range
-                        worker_node.vm.network("private_network", ip: worker_node_vm_ipv4_address, netmask: "255.255.255.0")
-                        worker_node.vm.disk(:disk, size: "70GB", primary: true)
-                        worker_node.vm.provider("virtualbox") do |vb|
-                            vb.name = worker_node_vm_name
+                        k8s_worker.vm.network("private_network", ip: k8s_worker_vm_ipv4_address, netmask: "255.255.255.0")
+                        k8s_worker.vm.disk(:disk, size: "70GB", primary: true)
+                        k8s_worker.vm.provider("virtualbox") do |vb|
+                            vb.name = k8s_worker_vm_name
                             vb.gui = config["k8s-worker-vm"]["virtualbox"]["gui"]
                             vb.memory = config["k8s-worker-vm"]["virtualbox"]["memory"]
                             vb.cpus = config["k8s-worker-vm"]["virtualbox"]["cpus"]         
                         end # vb
 
-                        worker_node.vm.provision "shell", inline: <<-EOF
-                            echo "Configuring #{worker_node_vm_hostname}"
+                        k8s_worker.vm.provision "shell", inline: <<-EOF
+                            echo "Configuring #{k8s_worker_vm_hostname}"
                         EOF
                         # Clean up ssh client fingerprint from previous runs
                         # TODO: clean up ssh know_hosts in WSL
-                        worker_node.trigger.before :up do |trigger|
-                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{worker_node_vm_ipv4_address}\"" }
+                        k8s_worker.trigger.before :up do |trigger|
+                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{k8s_worker_vm_ipv4_address}\"" }
                         end # trigger.before up
 
                         # Reboot after
-                        master_node.trigger.after :up do |trigger|
+                        k8s_worker.trigger.after :up do |trigger|
                             trigger.name = "Rebooting machine to apply hostname"
                             # ISSUE: Sometimes VM hangs on reboot
                             trigger.run_remote = { inline: "sudo shutdown -r now" }
                         end # trigger.after up
-                    end # worker_node config.vm.define
+                    end # k8s_worker config.vm.define
                 end # w
             end # if deploy_k8s_worker
         end # c
