@@ -49,3 +49,7 @@ See [the description of the environment where this has been tested](docs/environ
 The configuration file is located at src/config.yaml.  Alter it to suite your preferences.
 
 You can start Vagrant manually or use the scripts provided in the scripts directory.
+
+## Issues
+
+Report issues [here](https://github.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/issues)
