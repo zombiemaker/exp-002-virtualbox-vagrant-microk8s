@@ -8,18 +8,18 @@ It allows software engineers, devops process engineers, and application system e
 
 Implemented:
 
-* MicroK8s Kubernetes Cluster
+* Multi-region, multi Kubernetes cluster deployment
 
 
 TODOs:
 
-* K8s Cluster for GitOps application systems
+* K8s cluster for GitOps application systems
   * Apache Kafka (Kubernetes Operator)
   * ArgoCD (Kubernetes Operator)
   * GitHub Actions Runners
     * Linux runners
     * Microsoft Windows runners
-* K8s Cluster for production application systems
+* K8s cluster for product application systems
 * External K8s cluster services
   * K8s cluster external load balancer resource service provider
   * K8s cluster external DNS resource service provider
