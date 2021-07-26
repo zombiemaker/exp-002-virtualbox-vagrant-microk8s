@@ -183,7 +183,7 @@ Vagrant.configure("2") do |cfg|
                             
                             # Update and upgrade apt packages
                             echo "--------------------------------------------------"
-                            echo "Updating / upgrading apt packages
+                            echo "Updating / upgrading apt packages"
                             sudo apt-get update && apt-get upgrade -y
                             
                             # Update snap packages
