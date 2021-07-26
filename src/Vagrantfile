@@ -64,6 +64,7 @@ Vagrant.configure("2") do |cfg|
 
         # ELBs and DNSs are region level components
         if deploy_elb
+            puts "Deploying external load balancer for K8s cluster"
             (1..number_of_elbs_per_region).each do |elb_id|
                 # Cluster BGP Router / External Load Balancer (assuming 2 ELBs per cluster)
                 
@@ -85,7 +86,7 @@ Vagrant.configure("2") do |cfg|
                     end # vb
 
                     elb.vm.provision "shell", inline: <<-EOF
-                        echo Configuring k8s-r#{r}-elb#{elb_id}"
+                        echo "Configuring k8s-r#{r}-elb#{elb_id}"
                         sudo apt update && apt upgrade -y
                         sudo apt install quagga-bgpd quagga-doc -y
                     EOF
@@ -101,6 +102,7 @@ Vagrant.configure("2") do |cfg|
 
         # Cluster External DNS Authoritative Servers
         if deploy_edns
+            puts "Deploying external DNS service provider for K8s cluster"
             (1..number_of_ednss_per_region).each do |edns_id|
                 cfg.vm.define("k8s-r#{r}-edns#{edns_id}") do |edns|
                     edns_vm_name = "k8s-r#{r}-edns#{edns_id}"
@@ -119,7 +121,7 @@ Vagrant.configure("2") do |cfg|
                     end # vb
 
                     edns.vm.provision "shell", inline: <<-EOF
-                        echo Configuring k8s-r#{r}-edns#{edns_id}
+                        echo "Configuring k8s-r#{r}-edns#{edns_id}"
                         sudo apt update && apt upgrade -y
                     EOF
 
@@ -136,6 +138,7 @@ Vagrant.configure("2") do |cfg|
         (1..number_of_clusters_per_region).each do |c|
             # Kubernetes Cluster Master Nodes
             if deploy_k8s_master
+                puts "Deploying K8s cluster master nodes"
                 (1..master_nodes_per_cluster).each do |m|
                     # Define local variable to point cluster main master node
                     $master_node_m1 = nil
@@ -257,6 +260,8 @@ Vagrant.configure("2") do |cfg|
 
             # Kubernetes Cluster Worker Nodes
             if deploy_k8s_worker
+                puts "Deploying K8s cluster worker nodes"
+
                 (1..worker_nodes_per_cluster).each do |w|
                     cfg.vm.define("k8s-r#{r}-c#{c}-w#{w}") do |worker_node|
                         worker_node_vm_name = "k8s-r#{r}-c#{c}-w#{w}"
