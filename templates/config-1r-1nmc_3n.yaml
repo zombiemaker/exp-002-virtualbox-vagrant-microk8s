@@ -1,0 +1,6 @@
+---
+# Template configuration for the following landscape
+#
+# - 1 region
+# - 1 non-managed K8s cluster
+# - 3 nodes acting as datastore, master, and worker
