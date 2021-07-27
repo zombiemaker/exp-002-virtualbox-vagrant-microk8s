@@ -265,14 +265,12 @@ Vagrant.configure("2") do |cfg|
                         # TODO: clean up ssh known_hosts in WSL
                         k8s_master.trigger.before :up do |trigger|
                             trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{k8s_master_vm_ipv4_address}\"" }
-                        end # trigger.before up
+                        end # trigger.before up    
 
-                        # Reboot after
-                        k8s_master.trigger.after :up do |trigger|
-                            trigger.name = "Rebooting machine to apply changes"
-                            # ISSUE: Sometimes VM hangs on reboot
-                            trigger.run_remote = { inline: "sudo shutdown -r now" }
-                        end # trigger.after up
+                        k8s_master.trigger.after :provision do |trigger|
+                            trigger.name = "Post Provision Trigger"
+                            trigger.info = "Event triggered"
+                        end                    
                     end # k8s_master config.vm.define
                 end # m
             end # if deploy_k8s_master

@@ -13,7 +13,7 @@ k8s-clusters:
   number_of_ednss_per_region: 1
   number_of_clusters_per_region: 1
   number_of_azs_per_region: 3
-  master_nodes_per_cluster: 2
+  master_nodes_per_cluster: 1
   worker_nodes_per_cluster: 0
   number_ip_addresses_reserved_per_cluster: 5
 elb-vm:
