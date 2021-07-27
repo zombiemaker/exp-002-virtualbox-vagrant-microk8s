@@ -1,15 +1,19 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json",
     "type": "object",
     "properties": {
         "api_version": { "enum": ["v0.1.0"] },
         "virtual_resource_provider": { "$ref": "#/$defs/virtual_resource_provider" },
+        "virtual_resource_orchestrator": { "$ref": "#/$defs/virtual_resource_orchestrator" },
         "deployment_regions": { "$ref": "#/$defs/deployment_regions" },
         "platform_services_k8s_cluster": { "$ref": "#/$defs/k8s_cluster_config" },
         "product_services_k8s_cluster": { "$ref": "#/$defs/k8s_cluster_config" }
     },
     "required": [
         "api_version",
+        "virtual_resource_provider",
+        "virtual_resource_orchestrator",
         "deployment_regions",
         "platform_services_k8s_cluster",
         "product_services_k8s_cluster"
@@ -169,6 +173,16 @@
             "description": "virtual resource provider",
             "type": "object",
             "properties": {
+                "type": { "enum": ["virtualbox", "hyper-v", "aws", "azure", "google-cloud"] }
+            }
+        },
+        "hashicorp_vagrant_config": {
+            "title": "hashicorp_vagrant_config",
+            "description": "HashiCorp Vagrant configuration",
+            "type": "object",
+            "properties": {
+                "shared_directory_host_path": { "type": "string", "default": ".runtime"},
+                "shared_directory_vm_path": { "type": "string", "default": "./vagrant/.runtime"}
             }
         },
         "virtual_resource_orchestrator": {
@@ -176,6 +190,8 @@
             "description": "virtual resource orchestrator",
             "type": "object",
             "properties": {
+                "type": { "enum": ["hashicorp-vagrant", "hashicorp-terraform"] },
+                "hashicorp_vagrant_config": { "type": "$defs/hashicorp_vagrant_config" }
             }
         }
     }

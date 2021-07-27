@@ -10,9 +10,10 @@ virtual_resource_provider:
 
 # Platform for running programs to orchestrate virtual resource lifecycle
 virtual_resource_orchestrator:
-  type: vagrant
-  vagrant_config:
-    runtime_vm_shared_directory: /vagrant/.runtime
+  type: hashicorp-vagrant
+  hashicorp_vagrant_config:
+    shared_directory_host_path: ".runtime"
+    shared_directory_vm_path: /vagrant/.runtime
 
 # Configuration for all region level deployment
 deployment_regions:
