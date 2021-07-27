@@ -218,19 +218,21 @@ Vagrant.configure("2") do |cfg|
                             echo "Installing kubectl snap package"
                             sudo snap install kubectl --classic
 
-                            echo "--------------------------------------------------"
-                            echo "Creating kubectl config file for cluster"
+                            # BUG: Should not be created for each new node - only the first main master - other nodes copy
+                            if [ "#{k8s_master_vm_hostname}" == "#{$k8s_master_m1_vm_hostname}" ]; then
+                                echo "--------------------------------------------------"
+                                echo "Creating kubectl config file for cluster"
 
-                            if [[ ! -d "#{$vagrant_runtime_directory}" ]]; then
-                                echo "Directory #{$vagrant_runtime_directory} does not exist...creating"
-                                mkdir -p #{$vagrant_runtime_directory}
+                                if [[ ! -d "#{$vagrant_runtime_directory}" ]]; then
+                                    echo "Directory #{$vagrant_runtime_directory} does not exist...creating"
+                                    mkdir -p #{$vagrant_runtime_directory}
+                                fi
+                                
+                                microk8s config > #{$vagrant_runtime_directory}/kubectl-config
+                                sudo sed -i 's+server: https://10.0.2.15:16443+server: https://#{$k8s_master_m1_vm_ipv4_address}:16443+g' #{$vagrant_runtime_directory}/kubectl-config
+                                echo "kubectl config file #{$vagrant_runtime_directory}/kubectl-config"
+                                cat #{$vagrant_runtime_directory}/kubectl-config
                             fi
-                            
-                            microk8s config > #{$vagrant_runtime_directory}/kubectl-config
-                            sudo sed -i 's+server: https://10.0.2.15:16443+server: https://#{$k8s_master_m1_vm_ipv4_address}:16443+g' #{$vagrant_runtime_directory}/kubectl-config
-
-                            echo "kubectl config file #{$vagrant_runtime_directory}/kubectl-config"
-                            cat #{$vagrant_runtime_directory}/kubectl-config
                             
                             echo "--------------------------------------------------"
                             if [[ ! -d "~vagrant/.kube" ]]; then
@@ -244,6 +246,7 @@ Vagrant.configure("2") do |cfg|
                             sudo chown vagrant:vagrant ~vagrant/.kube/config
                         EOF
 
+                        # This code is executing in an unexpected sequence
                         if m != 1
                             # Generate node token on main master node                            
                             $k8s_master_m1.vm.provision "shell", inline: <<-EOF
@@ -266,8 +269,9 @@ Vagrant.configure("2") do |cfg|
 
                         
                         # Lifecycle Events
+                        # TODO: delete old cluster data when creating new cluster
                         # TODO: clean up ssh known_hosts in WSL
-                        # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                        # This does not clean if landscape is destroyed outside of vagrant program
                         k8s_master.trigger.after :destroy do |trigger|
                             trigger.name = "#{k8s_master_vm_hostname} Post-Destroy Trigger"
                             trigger.info = "Removing machine from ssh known_hosts"
