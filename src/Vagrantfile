@@ -70,6 +70,8 @@ Vagrant.configure("2") do |cfg|
                 # Cluster BGP Router / External Load Balancer (assuming 2 ELBs per cluster)
                 
                 cfg.vm.define("k8s-r#{r}-elb#{elb_id}") do |elb|
+                    puts "Configuring k8s elb k8s-r#{r}-elb#{elb_id}" if debug
+
                     elb_vm_name = "k8s-r#{r}-elb#{elb_id}"
                     elb_vm_hostname = "k8s-r#{r}-elb#{elb_id}"
                     elb_vm_ipv4_address = "10.#{r}.0.#{elb_id}"
@@ -105,6 +107,8 @@ Vagrant.configure("2") do |cfg|
         if deploy_edns
             (1..number_of_ednss_per_region).each do |edns_id|
                 cfg.vm.define("k8s-r#{r}-edns#{edns_id}") do |edns|
+                    puts "Configuring k8s edns k8s-r#{r}-edns#{edns_id}" if debug
+
                     edns_vm_name = "k8s-r#{r}-edns#{edns_id}"
                     edns_vm_hostname = "k8s-r#{r}-edns#{edns_id}"
                     edns_vm_ipv4_address = "10.#{r}.0.#{number_of_elbs_per_region + edns_id}"
@@ -145,7 +149,7 @@ Vagrant.configure("2") do |cfg|
                     $k8s_master_m1_vm_ipv4_address = nil
 
                     cfg.vm.define("k8s-r#{r}-c#{c}-m#{m}") do |k8s_master|
-                        puts "Configuring k8s master #{m}" if debug
+                        puts "Configuring k8s master k8s-r#{r}-c#{c}-m#{m}" if debug
                         
                         k8s_master_vm_name = "k8s-r#{r}-c#{c}-m#{m}"
                         k8s_master_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
@@ -229,11 +233,12 @@ Vagrant.configure("2") do |cfg|
                             if [[ ! -d "~vagrant/.kube" ]]; then
                                 echo "Directory ~vagrant/.kube does not exist...creating"
                                 mkdir -p ~vagrant/.kube
+                                chown -R vagrant:vagrant ~vagrant/.kube
                             fi
 
                             echo "Copying kubectl config for cluster to ~vagrant/.kube"
                             cp #{$vagrant_runtime_directory}/kubectl-config ~vagrant/.kube/config
-                            chown vagrant:vagrant ~vagrant/.kube/config
+                            sudo chown vagrant:vagrant ~vagrant/.kube/config
                         EOF
 
                         if m != 1
@@ -264,7 +269,7 @@ Vagrant.configure("2") do |cfg|
 
                         # Reboot after
                         k8s_master.trigger.after :up do |trigger|
-                            trigger.name = "Rebooting machine to apply hostname"
+                            trigger.name = "Rebooting machine to apply changes"
                             # ISSUE: Sometimes VM hangs on reboot
                             trigger.run_remote = { inline: "sudo shutdown -r now" }
                         end # trigger.after up
@@ -276,7 +281,7 @@ Vagrant.configure("2") do |cfg|
             if deploy_k8s_worker
                 (1..k8s_workers_per_cluster).each do |w|
                     cfg.vm.define("k8s-r#{r}-c#{c}-w#{w}") do |k8s_worker|
-                        puts "Configuring k8s worker #{w}" if debug
+                        puts "Configuring k8s worker k8s-r#{r}-c#{c}-w#{w}" if debug
 
                         k8s_worker_vm_name = "k8s-r#{r}-c#{c}-w#{w}"
                         k8s_worker_vm_hostname = "k8s-r#{r}-c#{c}-w#{w}"

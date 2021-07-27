@@ -4,7 +4,7 @@ activation-options:
   deploy_elb: false
   deploy_edns: false
   deploy_k8s_master: true
-  deploy_k8s_worker: true
+  deploy_k8s_worker: false
 vm:
   vagrant_runtime_directory: /vagrant/.runtime
 k8s-clusters:
@@ -13,29 +13,29 @@ k8s-clusters:
   number_of_ednss_per_region: 1
   number_of_clusters_per_region: 1
   number_of_azs_per_region: 3
-  master_nodes_per_cluster: 3
+  master_nodes_per_cluster: 2
   worker_nodes_per_cluster: 0
   number_ip_addresses_reserved_per_cluster: 5
 elb-vm:
-  vagrant-box: ubuntu/focal64
+  vagrant-box: bento/ubuntu-20.04
   virtualbox:
     gui: true
     memory: 2048
     cpus: 1
 edns-vm:
-  vagrant-box: ubuntu/focal64
+  vagrant-box: bento/ubuntu-20.04
   virtualbox:
     gui: true
     memory: 2048
     cpus: 1
 k8s-master-vm:
-  vagrant-box: ubuntu/focal64
+  vagrant-box: bento/ubuntu-20.04
   virtualbox:
     gui: true
-    memory: 4096
-    cpus: 2
+    memory: 8192
+    cpus: 4
 k8s-worker-vm:
-  vagrant-box: ubuntu/focal64
+  vagrant-box: bento/ubuntu-20.04
   virtualbox:
     gui: true
     memory: 4096
