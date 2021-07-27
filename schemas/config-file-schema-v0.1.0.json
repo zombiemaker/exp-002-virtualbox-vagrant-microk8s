@@ -1,0 +1,182 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "properties": {
+        "api_version": { "enum": ["v0.1.0"] },
+        "virtual_resource_provider": { "$ref": "#/$defs/virtual_resource_provider" },
+        "deployment_regions": { "$ref": "#/$defs/deployment_regions" },
+        "platform_services_k8s_cluster": { "$ref": "#/$defs/k8s_cluster_config" },
+        "product_services_k8s_cluster": { "$ref": "#/$defs/k8s_cluster_config" }
+    },
+    "required": [
+        "api_version",
+        "deployment_regions",
+        "platform_services_k8s_cluster",
+        "product_services_k8s_cluster"
+    ],
+    "$defs": {
+        "virtualbox_cpus": {
+            "title": "cpus",
+            "description": "Number of vCPUs for a VM",
+            "type": ["integer"],
+            "minimum": 0,
+            "default": 1
+        },
+        "virtualbox_memory": {
+            "title": "memory",
+            "description": "Number of memory in megabytes for a VM",
+            "type": ["integer"],
+            "minimum": 0,
+            "default": 1024
+        },
+        "virtualbox_gui": {
+            "title": "gui",
+            "description": "Display VM in VirtualBox GUI",
+            "type": ["boolean"],
+            "default": false
+        },
+        "virtualbox": {
+            "title": "virtualbox",
+            "description": "VirtualBox VM configuration",
+            "type": ["object"],
+            "properties": {
+                "gui": { "type": "$defs/virtualbox_gui"},
+                "memory": { "type": "$defs/virtualbox_memory"},
+                "cpus": { "type": "$defs/virtualbox_cpus"}
+            }
+        },
+        "vagrant_disk_size": {
+            "title": "disk_size",
+            "description": "VM disk size",
+            "type": ["string"],
+            "default": "20GB"
+        },
+        "vagrant_box": {
+            "title": "box",
+            "description": "HashiCorp Vagrant box",
+            "type": ["string"],
+            "default": ""
+        },
+        "vagrant_box_url": {
+            "title": "box_url",
+            "description": "HashiCorp Vagrant box URL",
+            "type": ["string"],
+            "default": ""
+        },
+        "vagrant_vm_config": {
+            "title": "vagrant_vm_config",
+            "description": "HashiCorp Vagrant VM config",
+            "type": ["object"],
+            "properties": {
+                "oneOf": [
+                    {
+                        "title": "vagrant_box",
+                        "type": "$defs/vagrant_box"
+                    },
+                    {
+                        "title": "vagrant_box_url",
+                        "type": "$defs/vagrant_box_url"
+                    }
+                ],
+                "memory": { "type": "$defs/virtualbox_memory"},
+                "cpus": { "type": "$defs/virtualbox_cpus"}
+            }
+        },
+        "vm_config": {
+            "title": "VM config",
+            "type": "object",
+            "properties": {
+                "oneOf": [
+                    {
+                        "title": "vagrant_vm_config",
+                        "type": "$defs/vagrant_vm_config"
+                    }
+                ]
+            }
+        },
+        "k8s_cluster_components": {
+            "title": "k8s_cluster_components",
+            "description": "k8s cluster components to deploy",
+            "type": "object",
+            "properties": {
+                "elb": { "type": "boolean", "default": false},
+                "edns": { "type": "boolean", "default": false},
+                "eca": { "type": "boolean", "default": false},
+                "k8s_datastore": { "type": "boolean", "default": false},
+                "k8s_master": { "type": "boolean", "default": false},
+                "k8s_worker": { "type": "boolean", "default": false},
+            }
+        },
+        "k8s_cluster_config": {
+            "title": "k8s cluster config",
+            "description": "K8s cluster configuration",
+            "type": "object",
+            "properties": {
+                "debug": { "type": "boolean", "default": false},
+                "deploy_components": { "type": "$defs/k8s_cluster_components" },
+                "master_nodes_per_cluster": { "type": "integer", "minimum": 0, "default": 0 },
+                "worker_nodes_per_cluster": { "type": "integer", "minimum": 0, "default": 0 },
+                "ip_addresses_reserved_per_cluster": { "type": "integer", "minimum": 0, "default": 0 },
+                "elb_vm": { "type": "$defs/vm_config" },
+                "edns_vm": { "type": "$defs/vm_config" },
+                "eca_vm": { "type": "$defs/vm_config" },
+                "k8s_datastore_vm": { "type": "$defs/vm_config" },
+                "k8s_master_vm": { "type": "$defs/vm_config" },
+                "k8s_worker_vm": { "type": "$defs/vm_config" }
+            }
+        },
+        "k8s_product_services_cluster_quantity": {
+            "title": "number_of_clusters",
+            "description": "Number of product services cluster deployed per region",
+            "type": "integer",
+            "minimum": 0
+        },
+        "region_components": {
+            "title": "region_components",
+            "description": "region components for deployment",
+            "type": "object",
+            "properties": {
+                "platform_services_k8s_cluster": { "type": "boolean", "default": false},
+                "product_services_k8s_cluster": { "type": "boolean", "default": false}
+            }
+        },
+        "region": {
+            "title": "deployment region",
+            "description": "deployment region and availability zones",
+            "type": "object",
+            "properties": {
+                "region": { "type": "string" },
+                "availability_zones": { "type": "array", "items": "string" }
+            }
+        },
+        "regions": {
+            "title": "deployment regions",
+            "description": "deployment regions",
+            "type": "array",
+            "items": { "type": "$defs/deployment_region" }
+        },
+        "deployment_regions": {
+            "title": "deployment regions",
+            "description": "deployment regions",
+            "type": "object",
+            "properties": {
+                "regions": { "type": "$defs/regions" },
+                "region_components": { "type": "$defs/region_components" }
+            }
+        },
+        "virtual_resource_provider": {
+            "title": "virtual_resource_provider",
+            "description": "virtual resource provider",
+            "type": "object",
+            "properties": {
+            }
+        },
+        "virtual_resource_orchestrator": {
+            "title": "virtual_resource_orchestrator",
+            "description": "virtual resource orchestrator",
+            "type": "object",
+            "properties": {
+            }
+        }
+    }
+}
