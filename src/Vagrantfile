@@ -7,9 +7,32 @@
 
 require 'yaml'
 require 'erb'
+require 'getoptlong'
 
-config_yaml = File.open('config.yaml').read
+# Initialize variable for optional parameters
+config_file = ''
+
+opts = GetoptLong.new(
+    [ '--config-file', GetoptLong::OPTIONAL_ARGUMENT]
+)
+
+opts.each do |opt, arg|
+    case opt
+    when '--config-file'
+        config_file = arg
+    end # case opt
+end # opts.each
+
+if config_file == ''
+    # Default config file is located with Vagrantfile and named config.yaml
+    puts "Using default configuration file config.yaml"
+    config_file = 'config.yaml'
+end # if config_file
+
+config_yaml = File.open(config_file).read
 config = YAML.load( ERB.new(config_yaml).result)
+config_api_version = config["api-version"]
+puts "configuration file #{config_file} uses api-version #{config_api_version}"
 
 # TODO:  Check config file for errors
 
@@ -75,7 +98,6 @@ Vagrant.configure("2") do |cfg|
                     elb_vm_name = "k8s-r#{r}-elb#{elb_id}"
                     elb_vm_hostname = "k8s-r#{r}-elb#{elb_id}"
                     elb_vm_ipv4_address = "10.#{r}.0.#{elb_id}"
-                    
 
                     elb.vm.box = config["elb-vm"]["vagrant-box"]
                     elb.vm.hostname = elb_vm_hostname
@@ -94,9 +116,9 @@ Vagrant.configure("2") do |cfg|
                         sudo apt install quagga-bgpd quagga-doc -y
                     EOF
 
-                    # Lifecycle Events
+                    # TODO: delete old cluster data when creating new cluster
                     # TODO: clean up ssh known_hosts in WSL
-                    # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                    # This does not clean if landscape is destroyed outside of vagrant program
                     elb.trigger.after :destroy do |trigger|
                         trigger.name = "#{elb_vm_hostname} Post-Destroy Trigger"
                         trigger.info = "Removing machine from ssh known_hosts"
@@ -111,11 +133,11 @@ Vagrant.configure("2") do |cfg|
         # Cluster External DNS Authoritative Servers
         if deploy_edns
             (1..number_of_ednss_per_region).each do |edns_id|
-                cfg.vm.define("k8s-r#{r}-edns#{edns_id}") do |edns|
+                cfg.vm.define("k8s-r#{r}-c#{c}-edns#{edns_id}") do |edns|
                     puts "Configuring k8s edns k8s-r#{r}-edns#{edns_id}" if debug
 
-                    edns_vm_name = "k8s-r#{r}-edns#{edns_id}"
-                    edns_vm_hostname = "k8s-r#{r}-edns#{edns_id}"
+                    edns_vm_name = "k8s-r#{r}-c#{c}-edns#{edns_id}"
+                    edns_vm_hostname = "k8s-r#{r}-c#{c}-edns#{edns_id}"
                     edns_vm_ipv4_address = "10.#{r}.0.#{number_of_elbs_per_region + edns_id}"
                 
                     edns.vm.box = config["edns-vm"]["vagrant-box"]
@@ -130,15 +152,15 @@ Vagrant.configure("2") do |cfg|
                     end # vb
 
                     edns.vm.provision "shell", inline: <<-EOF
-                        echo "Configuring k8s-r#{r}-edns#{edns_id}"
+                        echo "Configuring #{edns_vm_name}"
                         sudo apt update && apt upgrade -y
                     EOF
 
-                    # Lifecycle Events
+                    # TODO: delete old cluster data when creating new cluster
                     # TODO: clean up ssh known_hosts in WSL
-                    # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                    # This does not clean if landscape is destroyed outside of vagrant program
                     edns.trigger.after :destroy do |trigger|
-                        trigger.name = "#{edns_vm_hostname} Post-Destroy Trigger"
+                        trigger.name = "#{edns_vm_name} Post-Destroy Trigger"
                         trigger.info = "Removing machine from ssh known_hosts"
 
                         # Remove old ssh fingerprint form previous instances
@@ -178,6 +200,7 @@ Vagrant.configure("2") do |cfg|
                             vb.cpus = config["k8s-master-vm"]["virtualbox"]["cpus"]      
                         end #vb
 
+                        # First master node of a cluster is the main master node
                         if m == 1
                             $k8s_master_m1 = k8s_master
                             $k8s_master_m1_vm_hostname = k8s_master_vm_hostname
@@ -218,7 +241,7 @@ Vagrant.configure("2") do |cfg|
                             echo "Installing kubectl snap package"
                             sudo snap install kubectl --classic
 
-                            # BUG: Should not be created for each new node - only the first main master - other nodes copy
+                            # Created for each cluster's first main master - other nodes copy
                             if [ "#{k8s_master_vm_hostname}" == "#{$k8s_master_m1_vm_hostname}" ]; then
                                 echo "--------------------------------------------------"
                                 echo "Creating kubectl config file for cluster"
@@ -234,6 +257,8 @@ Vagrant.configure("2") do |cfg|
                                 cat #{$vagrant_runtime_directory}/kubectl-config
                             fi
                             
+                            # NOTE:  if the owner of the .kube and its contents are not set correctly,
+                            # MicroK8s takes A VERY LONG time to perform its operations
                             echo "--------------------------------------------------"
                             if [[ ! -d "~vagrant/.kube" ]]; then
                                 echo "Directory ~vagrant/.kube does not exist...creating"
@@ -246,7 +271,8 @@ Vagrant.configure("2") do |cfg|
                             sudo chown vagrant:vagrant ~vagrant/.kube/config
                         EOF
 
-                        # This code is executing in an unexpected sequence
+                        # This code is executing in an unexpected sequence.  For m > 1, this code is executed before the previous
+                        # provisioning code for the VM.
                         if m != 1
                             # Generate node token on main master node                            
                             $k8s_master_m1.vm.provision "shell", inline: <<-EOF
@@ -268,12 +294,11 @@ Vagrant.configure("2") do |cfg|
                         end # if m != 1
 
                         
-                        # Lifecycle Events
                         # TODO: delete old cluster data when creating new cluster
                         # TODO: clean up ssh known_hosts in WSL
                         # This does not clean if landscape is destroyed outside of vagrant program
                         k8s_master.trigger.after :destroy do |trigger|
-                            trigger.name = "#{k8s_master_vm_hostname} Post-Destroy Trigger"
+                            trigger.name = "#{k8s_master_vm_name} Post-Destroy Trigger"
                             trigger.info = "Removing machine from ssh known_hosts"
 
                             # Remove old ssh fingerprint form previous instances
@@ -310,11 +335,11 @@ Vagrant.configure("2") do |cfg|
                             echo "Configuring #{k8s_worker_vm_hostname}"
                         EOF
                         
-                        # Lifecycle Events
+                        # TODO: delete old cluster data when creating new cluster
                         # TODO: clean up ssh known_hosts in WSL
-                        # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                        # This does not clean if landscape is destroyed outside of vagrant program
                         k8s_worker.trigger.after :destroy do |trigger|
-                            trigger.name = "#{k8s_worker_vm_hostname} Post-Destroy Trigger"
+                            trigger.name = "#{k8s_worker_vm_name} Post-Destroy Trigger"
                             trigger.info = "Removing machine from ssh known_hosts"
 
                             # Remove old ssh fingerprint form previous instances
