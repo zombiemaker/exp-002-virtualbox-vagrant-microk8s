@@ -1,5 +1,9 @@
 # Basic Commands
 
+## Create a configuration file by copying a template and modifying it
+
+Read [the documentation on the configuration file syntax]](config-file-syntax.md).
+
 ## Create landscape using PowerShell script
 
 * From PowerShell
@@ -19,7 +23,7 @@
 * From PowerShell
     ```
     cd src
-    vagrant up
+    vagrant --config-file=[path to config file] up
     ```
 
 ## Halt landscape without destroying VMs without PowerShell script
@@ -27,7 +31,7 @@
 * From PowerShell
     ```
     cd src
-    vagrant halt
+    vagrant --config-file=[path to config file] halt
     ```
 
 ## Destroy landscape without PowerShell script
@@ -35,7 +39,7 @@
 * From PowerShell
     ```
     cd src
-    vagrant destroy -f
+    vagrant --config-file=[path to config file] destroy -f
     ```
 
 ## Landscape status
@@ -43,7 +47,7 @@
 * From PowerShell
     ```
     cd src
-    vagrant status
+    vagrant --config-file=[path to config file] status
 
     Current machine states:
 
@@ -57,7 +61,7 @@
 * From PowerShell
     ```
     cd src
-    vagrant ssh k8s-r1-c1-m1
+    vagrant --config-file=[path to config file] ssh k8s-r1-c1-m1
     ```
 
 ## SSH into VM using Windows OpenSSH
