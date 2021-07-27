@@ -94,11 +94,16 @@ Vagrant.configure("2") do |cfg|
                         sudo apt install quagga-bgpd quagga-doc -y
                     EOF
 
-                    # Clean up ssh client fingerprint from previous runs
-                    # TODO: clean up ssh know_hosts in WSL
-                    elb.trigger.before :up do |trigger|
+                    # Lifecycle Events
+                    # TODO: clean up ssh known_hosts in WSL
+                    # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                    elb.trigger.after :destroy do |trigger|
+                        trigger.name = "#{elb_vm_hostname} Post-Destroy Trigger"
+                        trigger.info = "Removing machine from ssh known_hosts"
+
+                        # Remove old ssh fingerprint form previous instances
                         trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{elb_vm_ipv4_address}\"" }
-                    end # trigger
+                    end # trigger.after destroy
                 end # elb config.vm.define
             end # elb_id
         end # if deploy_elb
@@ -129,11 +134,16 @@ Vagrant.configure("2") do |cfg|
                         sudo apt update && apt upgrade -y
                     EOF
 
-                    # Clean up ssh client fingerprint from previous runs
-                    # TODO: clean up ssh know_hosts in WSL
-                    edns.trigger.before :up do |trigger|
+                    # Lifecycle Events
+                    # TODO: clean up ssh known_hosts in WSL
+                    # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                    edns.trigger.after :destroy do |trigger|
+                        trigger.name = "#{edns_vm_hostname} Post-Destroy Trigger"
+                        trigger.info = "Removing machine from ssh known_hosts"
+
+                        # Remove old ssh fingerprint form previous instances
                         trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{edns_vm_ipv4_address}\"" }
-                    end # trigger
+                    end # trigger.after destroy
                 end # edns config.vm.define
             end # edns_id
         end # if deploy_edns
@@ -173,13 +183,6 @@ Vagrant.configure("2") do |cfg|
                             $k8s_master_m1_vm_hostname = k8s_master_vm_hostname
                             $k8s_master_m1_vm_ipv4_address = k8s_master_vm_ipv4_address
                         end # if m == 1
-
-                        if debug
-                            puts "Current k8s_master object id = #{k8s_master.object_id}"
-                            puts "Current k8s_master.vm = #{k8s_master.vm}"
-                            puts "k8s_master_m1 object id = #{$k8s_master_m1.object_id}"
-                            puts "k8s_master_m1.vm = #{$k8s_master_m1.vm}"
-                        end # if debug
                         
                         k8s_master.vm.provision "shell", inline: <<-EOF
                             echo "=================================================="
@@ -261,16 +264,17 @@ Vagrant.configure("2") do |cfg|
                             EOF
                         end # if m != 1
 
-                        # Clean up ssh client fingerprint from previous runs
+                        
+                        # Lifecycle Events
                         # TODO: clean up ssh known_hosts in WSL
-                        k8s_master.trigger.before :up do |trigger|
-                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{k8s_master_vm_ipv4_address}\"" }
-                        end # trigger.before up    
+                        # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                        k8s_master.trigger.after :destroy do |trigger|
+                            trigger.name = "#{k8s_master_vm_hostname} Post-Destroy Trigger"
+                            trigger.info = "Removing machine from ssh known_hosts"
 
-                        k8s_master.trigger.after :provision do |trigger|
-                            trigger.name = "Post Provision Trigger"
-                            trigger.info = "Event triggered"
-                        end                    
+                            # Remove old ssh fingerprint form previous instances
+                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{k8s_master_vm_ipv4_address}\"" }
+                        end # trigger.after destroy
                     end # k8s_master config.vm.define
                 end # m
             end # if deploy_k8s_master
@@ -301,18 +305,17 @@ Vagrant.configure("2") do |cfg|
                         k8s_worker.vm.provision "shell", inline: <<-EOF
                             echo "Configuring #{k8s_worker_vm_hostname}"
                         EOF
-                        # Clean up ssh client fingerprint from previous runs
-                        # TODO: clean up ssh know_hosts in WSL
-                        k8s_worker.trigger.before :up do |trigger|
-                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{k8s_worker_vm_ipv4_address}\"" }
-                        end # trigger.before up
+                        
+                        # Lifecycle Events
+                        # TODO: clean up ssh known_hosts in WSL
+                        # List of builtin actions: https://www.rubydoc.info/github/mitchellh/vagrant/Vagrant/Action/Builtin
+                        k8s_worker.trigger.after :destroy do |trigger|
+                            trigger.name = "#{k8s_worker_vm_hostname} Post-Destroy Trigger"
+                            trigger.info = "Removing machine from ssh known_hosts"
 
-                        # Reboot after
-                        k8s_worker.trigger.after :up do |trigger|
-                            trigger.name = "Rebooting machine to apply hostname"
-                            # ISSUE: Sometimes VM hangs on reboot
-                            trigger.run_remote = { inline: "sudo shutdown -r now" }
-                        end # trigger.after up
+                            # Remove old ssh fingerprint form previous instances
+                            trigger.run = { inline: "ssh-keygen -f \"#{$home_dir}/.ssh/known_hosts\" -R \"#{k8s_worker_vm_ipv4_address}\"" }
+                        end # trigger.after destroy
                     end # k8s_worker config.vm.define
                 end # w
             end # if deploy_k8s_worker
