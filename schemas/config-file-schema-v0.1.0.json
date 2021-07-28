@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "http://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json",
     "type": "object",
     "properties": {
@@ -22,68 +22,68 @@
         "virtualbox_cpus": {
             "title": "cpus",
             "description": "Number of vCPUs for a VM",
-            "type": ["integer"],
+            "type": "integer",
             "minimum": 0,
             "default": 1
         },
         "virtualbox_memory": {
             "title": "memory",
             "description": "Number of memory in megabytes for a VM",
-            "type": ["integer"],
+            "type": "integer",
             "minimum": 0,
             "default": 1024
         },
         "virtualbox_gui": {
             "title": "gui",
             "description": "Display VM in VirtualBox GUI",
-            "type": ["boolean"],
+            "type": "boolean",
             "default": false
         },
         "virtualbox": {
             "title": "virtualbox",
             "description": "VirtualBox VM configuration",
-            "type": ["object"],
+            "type": "object",
             "properties": {
-                "gui": { "type": "$defs/virtualbox_gui"},
-                "memory": { "type": "$defs/virtualbox_memory"},
-                "cpus": { "type": "$defs/virtualbox_cpus"}
+                "gui": { "$refs": "#/$defs/virtualbox_gui"},
+                "memory": { "$refs": "#/$defs/virtualbox_memory"},
+                "cpus": { "$refs": "#/$defs/virtualbox_cpus"}
             }
         },
         "vagrant_disk_size": {
             "title": "disk_size",
             "description": "VM disk size",
-            "type": ["string"],
+            "type": "string",
             "default": "20GB"
         },
         "vagrant_box": {
             "title": "box",
             "description": "HashiCorp Vagrant box",
-            "type": ["string"],
+            "type": "string",
             "default": ""
         },
         "vagrant_box_url": {
             "title": "box_url",
             "description": "HashiCorp Vagrant box URL",
-            "type": ["string"],
+            "type": "string",
             "default": ""
         },
         "vagrant_vm_config": {
             "title": "vagrant_vm_config",
             "description": "HashiCorp Vagrant VM config",
-            "type": ["object"],
+            "type": "object",
             "properties": {
                 "oneOf": [
                     {
                         "title": "vagrant_box",
-                        "type": "$defs/vagrant_box"
+                        "$refs": "#/$defs/vagrant_box"
                     },
                     {
                         "title": "vagrant_box_url",
-                        "type": "$defs/vagrant_box_url"
+                        "$refs": "#/$defs/vagrant_box_url"
                     }
                 ],
-                "memory": { "type": "$defs/virtualbox_memory"},
-                "cpus": { "type": "$defs/virtualbox_cpus"}
+                "memory": { "$refs": "#/$defs/virtualbox_memory"},
+                "cpus": { "$refs": "#/$defs/virtualbox_cpus"}
             }
         },
         "vm_config": {
@@ -93,7 +93,7 @@
                 "oneOf": [
                     {
                         "title": "vagrant_vm_config",
-                        "type": "$defs/vagrant_vm_config"
+                        "$refs": "#/$defs/vagrant_vm_config"
                     }
                 ]
             }
@@ -117,16 +117,16 @@
             "type": "object",
             "properties": {
                 "debug": { "type": "boolean", "default": false},
-                "deploy_components": { "type": "$defs/k8s_cluster_components" },
+                "deploy_components": { "$refs": "#/$defs/k8s_cluster_components" },
                 "master_nodes_per_cluster": { "type": "integer", "minimum": 0, "default": 0 },
                 "worker_nodes_per_cluster": { "type": "integer", "minimum": 0, "default": 0 },
                 "ip_addresses_reserved_per_cluster": { "type": "integer", "minimum": 0, "default": 0 },
-                "elb_vm": { "type": "$defs/vm_config" },
-                "edns_vm": { "type": "$defs/vm_config" },
-                "eca_vm": { "type": "$defs/vm_config" },
-                "k8s_datastore_vm": { "type": "$defs/vm_config" },
-                "k8s_master_vm": { "type": "$defs/vm_config" },
-                "k8s_worker_vm": { "type": "$defs/vm_config" }
+                "elb_vm": { "$refs": "#/$defs/vm_config" },
+                "edns_vm": { "$refs": "#/$defs/vm_config" },
+                "eca_vm": { "$refs": "#/$defs/vm_config" },
+                "k8s_datastore_vm": { "$refs": "#/$defs/vm_config" },
+                "k8s_master_vm": { "$refs": "#/$defs/vm_config" },
+                "k8s_worker_vm": { "$refs": "#/$defs/vm_config" }
             }
         },
         "k8s_product_services_cluster_quantity": {
@@ -157,15 +157,15 @@
             "title": "deployment regions",
             "description": "deployment regions",
             "type": "array",
-            "items": { "type": "$defs/deployment_region" }
+            "items": { "$refs": "#/$defs/deployment_region" }
         },
         "deployment_regions": {
             "title": "deployment regions",
             "description": "deployment regions",
             "type": "object",
             "properties": {
-                "regions": { "type": "$defs/regions" },
-                "region_components": { "type": "$defs/region_components" }
+                "regions": { "$refs": "#/$defs/regions" },
+                "region_components": { "$refs": "#/$defs/region_components" }
             }
         },
         "virtual_resource_provider": {
@@ -176,13 +176,13 @@
                 "type": { "enum": ["virtualbox", "hyper-v", "aws", "azure", "google-cloud"] }
             }
         },
-        "hashicorp_vagrant_config": {
-            "title": "hashicorp_vagrant_config",
-            "description": "HashiCorp Vagrant configuration",
+        "hashicorp_vagrant_vrp": {
+            "title": "hashicorp_vagrant_vrp",
+            "description": "HashiCorp Vagrant virtual resource provider",
             "type": "object",
             "properties": {
-                "shared_directory_host_path": { "type": "string", "default": ".runtime"},
-                "shared_directory_vm_path": { "type": "string", "default": "./vagrant/.runtime"}
+                "shared_directory_host_path": { "type": "string", "default": ".runtime" },
+                "shared_directory_vm_path": { "type": "string", "default": "./vagrant/.runtime" }
             }
         },
         "virtual_resource_orchestrator": {
@@ -190,8 +190,8 @@
             "description": "virtual resource orchestrator",
             "type": "object",
             "properties": {
-                "type": { "enum": ["hashicorp-vagrant", "hashicorp-terraform"] },
-                "hashicorp_vagrant_config": { "type": "$defs/hashicorp_vagrant_config" }
+                "type": { "enum": [ "hashicorp-vagrant", "hashicorp-terraform" ] },
+                "hashicorp_vagrant_vrp": { "$refs": "#/$defs/hashicorp_vagrant_vrp" }
             }
         }
     }
