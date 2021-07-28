@@ -1,4 +1,0 @@
-{
-    "$schema": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json",
-    "line_endings": "unix"
-}

@@ -1,5 +1,5 @@
 ---
-api-version: v0.1
+api-version: v0.0.1
 activation-options:
   debug: false
   deploy_elb: false
