@@ -1,5 +1,13 @@
-module ConfigureAPI
+module ConfigurationApi
+
+    # TODO: Design configuration object to handle different API versions over time
+    class Configuration
+
+    end # class Configuration
+
+
     # Method to get configuration data from configuration file
+    # TODO:  Check config file for errors against the schema definition
     def get_config_file_content(opts)
         puts "get_config_file_content start"
 
@@ -104,13 +112,75 @@ module ConfigureAPI
     # Convert from API v0.0.1 data object to configuration object
     def init_config_0_1_0(config_hash, config_file_hash)
         puts "init_config_0_1_0 start"
+
+        config_hash[:virtual_resource_provider-type] = config_file_hash["virtual_resource_provider"]["type"]
+        config_hash[:virtual_resource_deployment_programming_platform-type] = config_file_hash["virtual_resource_deployment_programming_platform"]["type"]
+
+
+
+        config_hash[:debug] = config_file_hash["activation-options"]["debug"]
+        config_hash[:deploy_elb] = config_file_hash["activation-options"]["deploy_elb"]
+        config_hash[:deploy_edns] = config_file_hash["activation-options"]["deploy_edns"]
+        config_hash[:deploy_k8s_master] = config_file_hash["activation-options"]["deploy_k8s_master"]
+        config_hash[:deploy_k8s_worker] = config_file_hash["activation-options"]["deploy_k8s_worker"]
+        config_hash[:regions] = config_file_hash["k8s-clusters"]["regions"]
+        config_hash[:number_of_regions] = config_hash[:regions].size
+
+        # Assuming that a cluster is needed for a separate geographic region  or availability zone
+        # Each cluster needs:
+        #   - External BGP router / load balancer
+        #   - External DNS server
+        #   - External TLS certificate authority
+        #   - Kubernetes master nodes
+        #   - Kubernetes worker nodes
+        config_hash[:number_of_elbs_per_region] = config_file_hash["k8s-clusters"]["number_of_elbs_per_region"]
+        config_hash[:number_of_ednss_per_region] = config_file_hash["k8s-clusters"]["number_of_ednss_per_region"]
+        config_hash[:number_of_clusters_per_region] = config_file_hash["k8s-clusters"]["number_of_clusters_per_region"]
+        config_hash[:number_of_azs_per_region] = config_file_hash["k8s-clusters"]["number_of_azs_per_region"]
+        config_hash[:number_of_clusters] = config_hash[:number_of_regions] * config_hash[:number_of_clusters_per_region]
+        # Master nodes and worker nodes will be in the same subnet
+        # Total number of master and worker nodes cannot exceed subnet capacity (including addresses reserved for network services)
+        # Distribute nodes across number of AZs
+        # Each K8s cluster will use 1 IPv4 class C address range (for this design)
+        # Estimate 100 pods per worker node
+        config_hash[:k8s_masters_per_cluster] = config_file_hash["k8s-clusters"]["master_nodes_per_cluster"]
+        config_hash[:k8s_workers_per_cluster] = config_file_hash["k8s-clusters"]["worker_nodes_per_cluster"]
+        config_hash[:number_ip_addresses_reserved_per_cluster] = config_file_hash["k8s-clusters"]["number_ip_addresses_reserved_per_cluster"]
+
+        config_hash[:elb_vm_box] = config_file_hash["elb-vm"]["vagrant-box"]
+        config_hash[:elb_vm_disk_size] = "20GB"
+        config_hash[:elb_vm_vb_gui] = config_file_hash["elb-vm"]["virtualbox"]["gui"]
+        config_hash[:elb_vm_vb_memory] = config_file_hash["elb-vm"]["virtualbox"]["memory"]
+        config_hash[:elb_vm_vb_cpus] = config_file_hash["elb-vm"]["virtualbox"]["cpus"]
+
+        config_hash[:edns_vm_box] = config_file_hash["elb-vm"]["vagrant-box"]
+        config_hash[:edns_vm_disk_size] = "20GB"
+        config_hash[:edns_vm_vb_gui] = config_file_hash["elb-vm"]["virtualbox"]["gui"]
+        config_hash[:edns_vm_vb_memory] = config_file_hash["elb-vm"]["virtualbox"]["memory"]
+        config_hash[:edns_vm_vb_cpus] = config_file_hash["elb-vm"]["virtualbox"]["cpus"]
+
+        config_hash[:k8s_master_vm_box] = config_file_hash["k8s-master-vm"]["vagrant-box"]
+        config_hash[:k8s_master_vm_disk_size] = "20GB"
+        config_hash[:k8s_master_vm_vb_gui] = config_file_hash["k8s-master-vm"]["virtualbox"]["gui"]
+        config_hash[:k8s_master_vm_vb_memory] = config_file_hash["k8s-master-vm"]["virtualbox"]["memory"]
+        config_hash[:k8s_master_vm_vb_cpus] = config_file_hash["k8s-master-vm"]["virtualbox"]["cpus"]
+
+        config_hash[:k8s_worker_vm_box] = config_file_hash["k8s-worker-vm"]["vagrant-box"]
+        config_hash[:k8s_worker_vm_disk_size] = "40GB"
+        config_hash[:k8s_worker_vm_vb_gui] = config_file_hash["k8s-worker-vm"]["virtualbox"]["gui"]
+        config_hash[:k8s_worker_vm_vb_memory] = config_file_hash["k8s-worker-vm"]["virtualbox"]["memory"]
+        config_hash[:k8s_worker_vm_vb_cpus] = config_file_hash["k8s-worker-vm"]["virtualbox"]["cpus"]
+
+        puts "init_config_0_1_0 finish"
     end # init_config_0_1_0
     module_function :init_config_0_1_0
 
 
     # Initialize application configuration object from API configuration file object
-    def ConfigureAPI.init_cfg(config_hash, opts)
+    def ConfigurationApi.init_cfg( opts)
         puts "ConfigureAPI.init_cfg start"
+
+        config_hash = Hash.new
 
         config_file_hash = get_config_file_content(opts)
 
@@ -133,6 +203,9 @@ module ConfigureAPI
             puts "Unsupported API version #{config_api_version}"
             exit 1
         end
+
+        return config_hash
+
         puts "ConfigureAPI.init_cfg finish"
     end # def ConfigureAPI.init_cfg
 end # module ConfigureAPI
