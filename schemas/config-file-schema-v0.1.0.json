@@ -104,19 +104,21 @@
             "description": "k8s cluster components to deploy",
             "type": "object",
             "properties": {
-                "elb": { "type": "boolean", "default": false},
-                "edns": { "type": "boolean", "default": false},
-                "eca": { "type": "boolean", "default": false},
-                "k8s_datastore": { "type": "boolean", "default": false},
-                "k8s_master": { "type": "boolean", "default": false},
-                "k8s_worker": { "type": "boolean", "default": false},
+                "apilb": { "type": "boolean", "default": false, "description": "deploy k8s api server load balancer" },
+                "elb": { "type": "boolean", "default": false, "description": "deploy external bgp load balancer for k8s service resources" },
+                "edns": { "type": "boolean", "default": false, "description": "deploy external dns server" },
+                "eca": { "type": "boolean", "default": false, "description": "deploy external TLS certificate authority" },
+                "k8s_datastore": { "type": "boolean", "default": false, "description": "deploy k8s datastore nodes" },
+                "k8s_master": { "type": "boolean", "default": false, "description": "deploy k8s master nodes" },
+                "k8s_worker": { "type": "boolean", "default": false, "description": "deploy k8s worker nodes" }
             }
         },
-        "k8s_cluster_config": {
+        "k8s_cluster_type": {
             "title": "k8s cluster config",
             "description": "K8s cluster configuration",
             "type": "object",
             "properties": {
+                "name": { "type": "string" },
                 "debug": { "type": "boolean", "default": false},
                 "deploy_components": { "$refs": "#/$defs/k8s_cluster_components" },
                 "master_nodes_per_cluster": { "type": "integer", "minimum": 0, "default": 0 },
@@ -130,20 +132,26 @@
                 "k8s_worker_vm": { "$refs": "#/$defs/vm_config" }
             }
         },
-        "k8s_product_services_cluster_quantity": {
-            "title": "number_of_clusters",
-            "description": "Number of product services cluster deployed per region",
-            "type": "integer",
-            "minimum": 0
+        "k8s_cluster_types": {
+            "title": "k8s cluster types",
+            "description": "types of k8s cluster deployed in a region",
+            "type": "array",
+            "items": { "$refs": "#/$defs/k8s_cluster_type" }
+        },
+        "region_k8s_cluster_type": {
+            "title": "region_k8s_cluster_type",
+            "description": "region k8s cluster type for deployment",
+            "type": "object",
+            "properties": {
+                "k8s_cluster_type": { "type": "string" },
+                "number_of_instances": { "type": "integer", "minimum": 0, "default": 0 }
+            }
         },
         "region_components": {
             "title": "region_components",
             "description": "region components for deployment",
-            "type": "object",
-            "properties": {
-                "platform_services_k8s_cluster": { "type": "boolean", "default": false},
-                "product_services_k8s_cluster": { "type": "boolean", "default": false}
-            }
+            "type": "array",
+            "items": { "$refs": "#/$defs/region_k8s_cluster_type" }
         },
         "region": {
             "title": "deployment region",
