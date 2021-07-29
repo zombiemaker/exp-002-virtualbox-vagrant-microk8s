@@ -5,108 +5,84 @@
 # that is linked to the VM host machine's directory where the vagrant program was executed.
 # This enables the VM guest OS to access and share files between VMs
 
+# Add current directory into path for Ruby modules
+$LOAD_PATH << '.'
+
 require 'yaml'
 require 'erb'
 require 'getoptlong'
-
-# Initialize variable for optional parameters
-config_file = ''
+require 'configure-api'
 
 # BUG: Need to handle vagrant options
-opts = GetoptLong.new(
+$opts = GetoptLong.new(
     [ '--config-file', GetoptLong::OPTIONAL_ARGUMENT]
 )
 
-opts.each do |opt, arg|
-    case opt
-    when '--config-file'
-        config_file = arg
-    end # case opt
-end # opts.each
-
-if config_file == ''
-    # Default config file is located with Vagrantfile and named config.yaml
-    puts "Using default configuration file config.yaml"
-    config_file = 'config.yaml'
-end # if config_file
-
-config_yaml = File.open(config_file).read
-config = YAML.load( ERB.new(config_yaml).result)
-
-# For version v0.0.1
-config_api_version = config["api-version"]
-if config_api_version == nil
-    # For version v0.1.0
-    config_api_version = config["api_version"]
-end # if config_api_version
-
-puts "configuration file #{config_file} uses api-version #{config_api_version}"
-
-
 $cfg = Hash.new
+ConfigureAPI.init_cfg($cfg, $opts)
 
 # TODO:  Check config file for errors
 $home_dir = File.expand_path('~')
 
-case config_api_version
-when 'v0.0.1'
-    $vagrant_runtime_directory = config["vm"]["vagrant_runtime_directory"]
-    $cfg[:debug] = config["activation-options"]["debug"]
-    $cfg[:deploy_elb] = config["activation-options"]["deploy_elb"]
-    $cfg[:deploy_edns] = config["activation-options"]["deploy_edns"]
-    $cfg[:deploy_k8s_master] = config["activation-options"]["deploy_k8s_master"]
-    $cfg[:deploy_k8s_worker] = config["activation-options"]["deploy_k8s_worker"]
-    $cfg[:regions] = config["k8s-clusters"]["regions"]
-    $cfg[:number_of_regions] = $cfg[:regions].size
+# case config_api_version
+# when 'v0.0.1'
+#     $vagrant_runtime_directory = config["vm"]["vagrant_runtime_directory"]
+#     $cfg[:debug] = config["activation-options"]["debug"]
+#     $cfg[:deploy_elb] = config["activation-options"]["deploy_elb"]
+#     $cfg[:deploy_edns] = config["activation-options"]["deploy_edns"]
+#     $cfg[:deploy_k8s_master] = config["activation-options"]["deploy_k8s_master"]
+#     $cfg[:deploy_k8s_worker] = config["activation-options"]["deploy_k8s_worker"]
+#     $cfg[:regions] = config["k8s-clusters"]["regions"]
+#     $cfg[:number_of_regions] = $cfg[:regions].size
 
-    # Assuming that a cluster is needed for a separate geographic region  or availability zone
-    # Each cluster needs:
-    #   - External BGP router / load balancer
-    #   - External DNS server
-    #   - External TLS certificate authority
-    #   - Kubernetes master nodes
-    #   - Kubernetes worker nodes
-    $cfg[:number_of_elbs_per_region] = config["k8s-clusters"]["number_of_elbs_per_region"]
-    $cfg[:number_of_ednss_per_region] = config["k8s-clusters"]["number_of_ednss_per_region"]
-    $cfg[:number_of_clusters_per_region] = config["k8s-clusters"]["number_of_clusters_per_region"]
-    $cfg[:number_of_azs_per_region] = config["k8s-clusters"]["number_of_azs_per_region"]
-    $cfg[:number_of_clusters] = $cfg[:number_of_regions] * $cfg[:number_of_clusters_per_region]
-    # Master nodes and worker nodes will be in the same subnet
-    # Total number of master and worker nodes cannot exceed subnet capacity (including addresses reserved for network services)
-    # Distribute nodes across number of AZs
-    # Each K8s cluster will use 1 IPv4 class C address range (for this design)
-    # Estimate 100 pods per worker node
-    $cfg[:k8s_masters_per_cluster] = config["k8s-clusters"]["master_nodes_per_cluster"]
-    $cfg[:k8s_workers_per_cluster] = config["k8s-clusters"]["worker_nodes_per_cluster"]
-    $cfg[:number_ip_addresses_reserved_per_cluster] = config["k8s-clusters"]["number_ip_addresses_reserved_per_cluster"]
+#     # Assuming that a cluster is needed for a separate geographic region  or availability zone
+#     # Each cluster needs:
+#     #   - External BGP router / load balancer
+#     #   - External DNS server
+#     #   - External TLS certificate authority
+#     #   - Kubernetes master nodes
+#     #   - Kubernetes worker nodes
+#     $cfg[:number_of_elbs_per_region] = config["k8s-clusters"]["number_of_elbs_per_region"]
+#     $cfg[:number_of_ednss_per_region] = config["k8s-clusters"]["number_of_ednss_per_region"]
+#     $cfg[:number_of_clusters_per_region] = config["k8s-clusters"]["number_of_clusters_per_region"]
+#     $cfg[:number_of_azs_per_region] = config["k8s-clusters"]["number_of_azs_per_region"]
+#     $cfg[:number_of_clusters] = $cfg[:number_of_regions] * $cfg[:number_of_clusters_per_region]
+#     # Master nodes and worker nodes will be in the same subnet
+#     # Total number of master and worker nodes cannot exceed subnet capacity (including addresses reserved for network services)
+#     # Distribute nodes across number of AZs
+#     # Each K8s cluster will use 1 IPv4 class C address range (for this design)
+#     # Estimate 100 pods per worker node
+#     $cfg[:k8s_masters_per_cluster] = config["k8s-clusters"]["master_nodes_per_cluster"]
+#     $cfg[:k8s_workers_per_cluster] = config["k8s-clusters"]["worker_nodes_per_cluster"]
+#     $cfg[:number_ip_addresses_reserved_per_cluster] = config["k8s-clusters"]["number_ip_addresses_reserved_per_cluster"]
 
-    $cfg[:elb_vm_box] = config["elb-vm"]["vagrant-box"]
-    $cfg[:elb_vm_disk_size] = "20GB"
-    $cfg[:elb_vm_vb_gui] = config["elb-vm"]["virtualbox"]["gui"]
-    $cfg[:elb_vm_vb_memory] = config["elb-vm"]["virtualbox"]["memory"]
-    $cfg[:elb_vm_vb_cpus] = config["elb-vm"]["virtualbox"]["cpus"]
+#     $cfg[:elb_vm_box] = config["elb-vm"]["vagrant-box"]
+#     $cfg[:elb_vm_disk_size] = "20GB"
+#     $cfg[:elb_vm_vb_gui] = config["elb-vm"]["virtualbox"]["gui"]
+#     $cfg[:elb_vm_vb_memory] = config["elb-vm"]["virtualbox"]["memory"]
+#     $cfg[:elb_vm_vb_cpus] = config["elb-vm"]["virtualbox"]["cpus"]
 
-    $cfg[:edns_vm_box] = config["elb-vm"]["vagrant-box"]
-    $cfg[:edns_vm_disk_size] = "20GB"
-    $cfg[:edns_vm_vb_gui] = config["elb-vm"]["virtualbox"]["gui"]
-    $cfg[:edns_vm_vb_memory] = config["elb-vm"]["virtualbox"]["memory"]
-    $cfg[:edns_vm_vb_cpus] = config["elb-vm"]["virtualbox"]["cpus"]
+#     $cfg[:edns_vm_box] = config["elb-vm"]["vagrant-box"]
+#     $cfg[:edns_vm_disk_size] = "20GB"
+#     $cfg[:edns_vm_vb_gui] = config["elb-vm"]["virtualbox"]["gui"]
+#     $cfg[:edns_vm_vb_memory] = config["elb-vm"]["virtualbox"]["memory"]
+#     $cfg[:edns_vm_vb_cpus] = config["elb-vm"]["virtualbox"]["cpus"]
 
-    $cfg[:k8s_master_vm_box] = config["k8s-master-vm"]["vagrant-box"]
-    $cfg[:k8s_master_vm_disk_size] = "20GB"
-    $cfg[:k8s_master_vm_vb_gui] = config["k8s-master-vm"]["virtualbox"]["gui"]
-    $cfg[:k8s_master_vm_vb_memory] = config["k8s-master-vm"]["virtualbox"]["memory"]
-    $cfg[:k8s_master_vm_vb_cpus] = config["k8s-master-vm"]["virtualbox"]["cpus"]
+#     $cfg[:k8s_master_vm_box] = config["k8s-master-vm"]["vagrant-box"]
+#     $cfg[:k8s_master_vm_disk_size] = "20GB"
+#     $cfg[:k8s_master_vm_vb_gui] = config["k8s-master-vm"]["virtualbox"]["gui"]
+#     $cfg[:k8s_master_vm_vb_memory] = config["k8s-master-vm"]["virtualbox"]["memory"]
+#     $cfg[:k8s_master_vm_vb_cpus] = config["k8s-master-vm"]["virtualbox"]["cpus"]
 
-    $cfg[:k8s_worker_vm_box] = config["k8s-worker-vm"]["vagrant-box"]
-    $cfg[:k8s_worker_vm_disk_size] = "40GB"
-    $cfg[:k8s_worker_vm_vb_gui] = config["k8s-worker-vm"]["virtualbox"]["gui"]
-    $cfg[:k8s_worker_vm_vb_memory] = config["k8s-worker-vm"]["virtualbox"]["memory"]
-    $cfg[:k8s_worker_vm_vb_cpus] = config["k8s-worker-vm"]["virtualbox"]["cpus"]
-when 'v0.1.0'
-else
-    puts "Unsupported API version #{config_api_version}"
-end # case config_api_version
+#     $cfg[:k8s_worker_vm_box] = config["k8s-worker-vm"]["vagrant-box"]
+#     $cfg[:k8s_worker_vm_disk_size] = "40GB"
+#     $cfg[:k8s_worker_vm_vb_gui] = config["k8s-worker-vm"]["virtualbox"]["gui"]
+#     $cfg[:k8s_worker_vm_vb_memory] = config["k8s-worker-vm"]["virtualbox"]["memory"]
+#     $cfg[:k8s_worker_vm_vb_cpus] = config["k8s-worker-vm"]["virtualbox"]["cpus"]
+# when 'v0.1.0'
+# else
+#     puts "Unsupported API version #{config_api_version}"
+# end # case config_api_version
 
 
 
@@ -139,7 +115,7 @@ Vagrant.configure("2") do |cfg|
                     elb_vm_hostname = "k8s-r#{r}-elb#{elb_id}"
                     elb_vm_ipv4_address = "10.#{r}.0.#{elb_id}"
 
-                    elb.vm.box = elb_vm_box
+                    elb.vm.box = $cfg[:elb_vm_box]
                     elb.vm.hostname = elb_vm_hostname
                     elb.vm.network("private_network", ip: elb_vm_ipv4_address, netmask: "255.255.255.0")
                     elb.vm.disk(:disk, size: elb_vm_disk_size, primary: true)
@@ -180,7 +156,7 @@ Vagrant.configure("2") do |cfg|
                     edns_vm_hostname = "k8s-r#{r}-c#{c}-edns#{edns_id}"
                     edns_vm_ipv4_address = "10.#{r}.0.#{number_of_elbs_per_region + edns_id}"
                 
-                    edns.vm.box = config["edns-vm"]["vagrant-box"]
+                    edns.vm.box = $cfg[:edns_vm_box]
                     edns.vm.hostname = edns_vm_hostname
                     edns.vm.network("private_network", ip: edns_vm_ipv4_address, netmask: "255.255.255.0")
                     edns.vm.disk(:disk, size: "20GB", primary: true)
@@ -227,7 +203,7 @@ Vagrant.configure("2") do |cfg|
                         k8s_master_vm_hostname = "k8s-r#{r}-c#{c}-m#{m}"
                         k8s_master_vm_ipv4_address = "10.#{r}.#{c}.#{m + $cfg[:number_ip_addresses_reserved_per_cluster]}"
                         
-                        k8s_master.vm.box = config["k8s-master-vm"]["vagrant-box"]
+                        k8s_master.vm.box = $cfg[:k8s_master_vm_box]
                         k8s_master.vm.hostname = k8s_master_vm_hostname
                         
                         # IPv4 addresses allocated from start of address range after reserved addresses
@@ -358,7 +334,7 @@ Vagrant.configure("2") do |cfg|
                         k8s_worker_vm_hostname = "k8s-r#{r}-c#{c}-w#{w}"
                         k8s_worker_vm_ipv4_address = "10.#{r}.#{c}.#{255-w}"
 
-                        k8s_worker.vm.box = config["k8s-worker-vm"]["vagrant-box"]
+                        k8s_worker.vm.box = $cfg[:k8s_worker_vm_box]
                         k8s_worker.vm.hostname = k8s_worker_vm_hostname
 
                         # IPv4 addresses allocated from end of address range

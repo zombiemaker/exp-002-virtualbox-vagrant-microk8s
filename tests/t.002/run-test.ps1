@@ -14,3 +14,5 @@ cp .runtime\kubectl-config $env:kubeconfig
 Function kctl { kubectl --kubeconfig=$env:kubeconfig $args }
 set-alias -name "kctl-$env:cdir" -value kctl
 & kctl-$env:cdir cluster-info
+
+cd $env:cpath
