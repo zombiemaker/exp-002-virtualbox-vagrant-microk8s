@@ -41,13 +41,20 @@ TODOs:
     * Microsoft Windows runners
 * K8s cluster for product application systems
 * External K8s cluster services
-  * K8s cluster external load balancer resource service provider
-  * K8s cluster external DNS resource service provider
-  * K8s cluster external TLS CA certificate resource service provider
+  * K8s cluster external tcp/upd load balancer (HAproxy, NGINX) with virtual IPs to K8s API server
+    * [Keepalived](https://keepalived.readthedocs.io/en/latest/index.html)
+  * K8s cluster external BGP router load balancer for applications running on the K8s cluster
+  * K8s cluster external DNS resource provider
+  * K8s cluster external TLS CA certificate resource provider
+  * K8s external load balancer K8s resource provider operator (MetaLB)
+  * K8s external DNS record K8s resource provider operator
+  * K8s external TLS certificate resource provider operator
   * Traffic manager DNS service 
   * Internet firewall
   * Internet CDN service
   * Virtual Kubelet
+* K8s-hosted application system components
+  * TCP / UDP ingress controller
 
 
 ## Issues
