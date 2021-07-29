@@ -22,142 +22,146 @@ deployment_regions:
     - region: us-west
       availability_zones: ["az-a", "az-b", "az-c"]
   region_components:
-    platform_services_k8s_cluster: false
-    product_services_k8s_cluster: true
+    - k8s_cluster_type: platform_services_k8s_cluster
+      number_of_instances: 0
+    - k8s_cluster_type: product_services_k8s_cluster
+      number_of_instances: 1
 
-# Define a non-managed K8s cluster that runs application systems that provide services
-# to manage the managed K8s clusters that run your product application systems
-platform_services_k8s_cluster:
-  debug: false
-  deploy_components:
-    elb: true
-    edns: false
-    eca: false
-    k8s_datastore: false
-    k8s_master: true
-    k8s_worker: false
-  master_nodes_per_cluster: 3
-  worker_nodes_per_cluster: 0
-  ip_addresses_reserved_per_cluster: 5
-  # Cluster external bgp load balancer
-  elb_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster external dns service provider
-  edns_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster external tls certificate authority
-  eca_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster datastore (e.g., etcd)
-  k8s_datastore_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster master nodes
-  k8s_master_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 40GB
-      virtualbox:
-        gui: true
-        memory: 2048
-        cpus: 1
-  # Cluster worker nodes
-  k8s_worker_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 40GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-
- # Define a managed K8s clusters that run product application systems
-product_services_k8s_cluster:
-  debug: false
-  deploy_components:
-    elb: true
-    edns: false
-    eca: false
-    k8s_datastore: false
-    k8s_master: true
-    k8s_worker: false
-  master_nodes_per_cluster: 3
-  worker_nodes_per_cluster: 0
-  ip_addresses_reserved_per_cluster: 5
-  # Cluster external bgp load balancer
-  elb_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster external dns service provider
-  edns_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster external tls certificate authority
-  eca_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster datastore (e.g., etcd)
-  k8s_datastore_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 20GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
-  # Cluster master nodes
-  k8s_master_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 40GB
-      virtualbox:
-        gui: true
-        memory: 2048
-        cpus: 1
-  # Cluster worker nodes
-  k8s_worker_vm:
-    vagrant_vm_config:
-      vagrant_box: bento/ubuntu-20.04
-      disk_size: 40GB
-      virtualbox:
-        gui: true
-        memory: 1024
-        cpus: 1
+k8s_cluster_types:
+  # Define a non-managed K8s cluster that runs application systems that provide services
+  # to manage the managed K8s clusters that run your product application systems
+  - name: platform_services_k8s_cluster
+    debug: false
+    deploy_components:
+      apilb: true
+      elb: true
+      edns: false
+      eca: false
+      k8s_datastore: false
+      k8s_master: true
+      k8s_worker: false
+    master_nodes_per_cluster: 3
+    worker_nodes_per_cluster: 0
+    ip_addresses_reserved_per_cluster: 5
+    # Cluster external bgp load balancer
+    elb_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster external dns service provider
+    edns_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster external tls certificate authority
+    eca_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster datastore (e.g., etcd)
+    k8s_datastore_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster master nodes
+    k8s_master_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 40GB
+        virtualbox:
+          gui: true
+          memory: 2048
+          cpus: 1
+    # Cluster worker nodes
+    k8s_worker_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 40GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+  # Define a managed K8s clusters that run product application systems 
+  - name: product_services_k8s_cluster
+    debug: false
+    deploy_components:
+      apilb: true
+      elb: true
+      edns: false
+      eca: false
+      k8s_datastore: false
+      k8s_master: true
+      k8s_worker: false
+    master_nodes_per_cluster: 3
+    worker_nodes_per_cluster: 0
+    ip_addresses_reserved_per_cluster: 5
+    # Cluster external bgp load balancer
+    elb_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster external dns service provider
+    edns_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster external tls certificate authority
+    eca_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster datastore (e.g., etcd)
+    k8s_datastore_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 20GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
+    # Cluster master nodes
+    k8s_master_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 40GB
+        virtualbox:
+          gui: true
+          memory: 2048
+          cpus: 1
+    # Cluster worker nodes
+    k8s_worker_vm:
+      vagrant_vm_config:
+        vagrant_box: bento/ubuntu-20.04
+        disk_size: 40GB
+        virtualbox:
+          gui: true
+          memory: 1024
+          cpus: 1
