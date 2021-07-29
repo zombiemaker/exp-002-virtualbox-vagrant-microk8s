@@ -14,7 +14,7 @@
     "required": [
         "api_version",
         "virtual_resource_provider",
-        "virtual_resource_orchestrator",
+        "virtual_resource_deployment_programming_platform",
         "deployment_regions",
         "platform_services_k8s_cluster",
         "product_services_k8s_cluster"
@@ -187,11 +187,11 @@
             }
         },
         "virtual_resource_orchestrator": {
-            "title": "virtual_resource_orchestrator",
-            "description": "virtual resource orchestrator",
+            "title": "virtual_resource_deployment_programming_platform",
+            "description": "virtual resource deployment programming platform",
             "type": "object",
             "properties": {
-                "type": { "enum": [ "hashicorp-vagrant", "hashicorp-terraform" ] },
+                "type": { "enum": [ "hashicorp-vagrant", "hashicorp-terraform", "aws-cloud-formation", "azure-resource-manager", "google-cloud-resource-manager" ] },
                 "hashicorp_vagrant_vrp": { "$refs": "#/$defs/hashicorp_vagrant_vrp" }
             }
         }
