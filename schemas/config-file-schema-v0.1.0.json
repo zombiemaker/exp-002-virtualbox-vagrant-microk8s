@@ -1,6 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json",
+    "title": "Kubernetes Cluster Deployment Landscape Definition",
     "type": "object",
     "properties": {
         "api_version": { "enum": ["v0.1.0"] },
