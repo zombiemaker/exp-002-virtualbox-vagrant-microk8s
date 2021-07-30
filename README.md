@@ -16,13 +16,21 @@ You can start Vagrant manually or use the scripts provided in the scripts direct
 
 It is assumed that the host machine is using Microsoft Windows 10 Pro.  The HashiCorp Vagrant programs might work fine on Linux or MacOS machines.  However, they have not been tested to confirm that this is the case.
 
+For hardware requirements, the amount of CPU cores and RAM will determine how large of a landscape you can create.  You will have to review your computer's available resources and the configuration for your Kubernetes cluster landscape.
+
 At a minimum, install the following software components on the host OS:
 
 * Docker Desktop for Windows (kubectl for Windows is included)
 * Oracle VirtualBox 6.1.22
 * HashiCorp Vagrant 2.2.17
+* Vagrant Plugin (i.e. RubyGem) json_schemer
 
-Make sure that the host OS search path environment variable is configured to find the kubectl, VirtualBox, and Vagrant programs.  You might have to restart ore re-login to the machine to make the changes active.
+Make sure that the host OS search path environment variable is configured to find the kubectl, VirtualBox, and Vagrant programs.  You might have to restart or re-login to the machine to make the changes active.
+
+To install the Vagrant plugin, execute the following in PowerShell:
+```
+vagrant plugin install 'json_schemer'
+```
 
 See [the description of the environment where this has been tested](docs/environment-tested.md). 
 
@@ -32,7 +40,7 @@ See [the description of the environment where this has been tested](docs/environ
 Implemented:
 * Multi-region, multi Kubernetes cluster deployment
 
-TODOs:
+Planned to be implemented:
 * K8s cluster for GitOps application systems
   * Apache Kafka (Kubernetes Operator)
   * ArgoCD (Kubernetes Operator)

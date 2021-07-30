@@ -1,23 +1,21 @@
 {
-    "$schema": "http://json-schema.org/draft/2020-12/schema",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json",
-    "title": "Kubernetes Cluster Deployment Landscape Definition",
+    "title": "Kubernetes Cluster Landscape Deployment Definition",
     "type": "object",
     "properties": {
         "api_version": { "enum": ["v0.1.0"] },
         "virtual_resource_provider": { "$ref": "#/$defs/virtual_resource_provider" },
-        "virtual_resource_orchestrator": { "$ref": "#/$defs/virtual_resource_orchestrator" },
+        "virtual_resource_provider_programming_platform": { "$ref": "#/$defs/virtual_resource_provider_programming_platform" },
         "deployment_regions": { "$ref": "#/$defs/deployment_regions" },
-        "platform_services_k8s_cluster": { "$ref": "#/$defs/k8s_cluster_config" },
-        "product_services_k8s_cluster": { "$ref": "#/$defs/k8s_cluster_config" }
+        "k8s_cluster_types": { "$ref": "#/$defs/k8s_cluster_types" }
     },
     "required": [
         "api_version",
         "virtual_resource_provider",
-        "virtual_resource_deployment_programming_platform",
+        "virtual_resource_provider_programming_platform",
         "deployment_regions",
-        "platform_services_k8s_cluster",
-        "product_services_k8s_cluster"
+        "k8s_cluster_types"
     ],
     "$defs": {
         "virtualbox_cpus": {
@@ -185,22 +183,22 @@
                 "type": { "enum": ["virtualbox", "hyper-v", "aws", "azure", "google-cloud"] }
             }
         },
-        "hashicorp_vagrant_vrp": {
-            "title": "hashicorp_vagrant_vrp",
-            "description": "HashiCorp Vagrant virtual resource provider",
+        "hashicorp_vagrant_vrppp": {
+            "title": "hashicorp_vagrant_vrppp",
+            "description": "HashiCorp Vagrant VRP Programming Platform",
             "type": "object",
             "properties": {
                 "shared_directory_host_path": { "type": "string", "default": ".runtime" },
                 "shared_directory_vm_path": { "type": "string", "default": "./vagrant/.runtime" }
             }
         },
-        "virtual_resource_orchestrator": {
-            "title": "virtual_resource_deployment_programming_platform",
-            "description": "virtual resource deployment programming platform",
+        "virtual_resource_provider_programming_platform": {
+            "title": "virtual resource provider programming platform",
+            "description": "virtual resource provider programming platform",
             "type": "object",
             "properties": {
                 "type": { "enum": [ "hashicorp-vagrant", "hashicorp-terraform", "aws-cloud-formation", "azure-resource-manager", "google-cloud-resource-manager" ] },
-                "hashicorp_vagrant_vrp": { "$refs": "#/$defs/hashicorp_vagrant_vrp" }
+                "hashicorp_vagrant_vrp": { "$refs": "#/$defs/hashicorp_vagrant_vrppp" }
             }
         }
     }

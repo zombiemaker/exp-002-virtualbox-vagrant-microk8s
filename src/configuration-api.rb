@@ -1,9 +1,18 @@
+require 'yaml'
+require 'json'
+require 'erb'
+require 'json_schemer'
+
 module ConfigurationApi
 
     # TODO: Design configuration object to handle different API versions over time
     class Configuration
 
     end # class Configuration
+
+    class K8sClusterType
+        
+    end # K8sClusterType
 
 
     # Method to get configuration data from configuration file
@@ -40,7 +49,19 @@ module ConfigurationApi
 
         # Get config file content
         config_file_yaml = File.open(config_file).read
+        puts "YAML format\n#{config_file_yaml}"
+        config_file_json = YAML.load(config_file_yaml).to_json
+        puts "JSON format\n#{config_file_json}"
+        json_schema_file="..\\schemas\\k8s-cluster-landscape-deployment-schema-v0.1.0.json"
+        puts "JSON schema file: #{json_schema_file}"
+        json_schema = File.open(json_schema_file).read
+        #puts "JSON schema\n#{json_schema}"
+        schemer = JSONSchemer.schema(json_schema)
+        puts "Is configuration valid? #{schemer.valid?(config_file_json)}"
+
+
         config_file_hash = YAML.load( ERB.new(config_file_yaml).result)
+        
 
         return config_file_hash
 

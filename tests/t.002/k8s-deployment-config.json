@@ -1,0 +1,210 @@
+{
+	"$schema": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json",
+	"api_version": "v0.1.0",
+	"virtual_resource_provider": {
+	  "type": "virtualbox"
+	},
+	"virtual_resource_provider_programming_platform": {
+	  "type": "hashicorp-vagrant",
+	  "hashicorp_vagrant_config": {
+		"shared_directory_host_path": ".runtime",
+		"shared_directory_vm_path": "/vagrant/.runtime"
+	  }
+	},
+	"deployment_regions": {
+	  "regions": [
+		{
+		  "region": "us-east",
+		  "availability_zones": [
+			"az-1",
+			"az-2",
+			"az-3"
+		  ]
+		},
+		{
+		  "region": "us-west",
+		  "availability_zones": [
+			"az-a",
+			"az-b",
+			"az-c"
+		  ]
+		}
+	  ],
+	  "region_components": [
+		{
+		  "k8s_cluster_type": "platform_services_k8s_cluster",
+		  "number_of_instances": 0
+		},
+		{
+		  "k8s_cluster_type": "product_services_k8s_cluster",
+		  "number_of_instances": 1
+		}
+	  ]
+	},
+	"k8s_cluster_types": [
+	  {
+		"name": "platform_services_k8s_cluster",
+		"debug": false,
+		"deploy_components": {
+		  "apilb": true,
+		  "elb": true,
+		  "edns": false,
+		  "eca": false,
+		  "k8s_datastore": false,
+		  "k8s_master": true,
+		  "k8s_worker": false
+		},
+		"master_nodes_per_cluster": 3,
+		"worker_nodes_per_cluster": 0,
+		"ip_addresses_reserved_per_cluster": 5,
+		"elb_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"edns_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"eca_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"k8s_datastore_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"k8s_master_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "40GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 2048,
+			  "cpus": 1
+			}
+		  }
+		},
+		"k8s_worker_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "40GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		}
+	  },
+	  {
+		"name": "product_services_k8s_cluster",
+		"debug": false,
+		"deploy_components": {
+		  "apilb": true,
+		  "elb": true,
+		  "edns": false,
+		  "eca": false,
+		  "k8s_datastore": false,
+		  "k8s_master": true,
+		  "k8s_worker": false
+		},
+		"master_nodes_per_cluster": 3,
+		"worker_nodes_per_cluster": 0,
+		"ip_addresses_reserved_per_cluster": 5,
+		"elb_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"edns_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"eca_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"k8s_datastore_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "20GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		},
+		"k8s_master_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "40GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 2048,
+			  "cpus": 1
+			}
+		  }
+		},
+		"k8s_worker_vm": {
+		  "vagrant_vm_config": {
+			"vagrant_box": "bento/ubuntu-20.04",
+			"disk_size": "40GB",
+			"virtualbox": {
+			  "gui": true,
+			  "memory": 1024,
+			  "cpus": 1
+			}
+		  }
+		}
+	  }
+	]
+  }

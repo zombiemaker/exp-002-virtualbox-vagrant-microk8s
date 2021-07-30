@@ -8,8 +8,6 @@
 # Add current directory into path for Ruby modules
 $LOAD_PATH << '.'
 
-require 'yaml'
-require 'erb'
 require 'getoptlong'
 require 'configuration-api'
 

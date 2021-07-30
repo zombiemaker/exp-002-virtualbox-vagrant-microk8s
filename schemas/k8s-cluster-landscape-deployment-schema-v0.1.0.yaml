@@ -1,0 +1,242 @@
+---
+"$schema": http://json-schema.org/draft/2020-12/schema
+"$id": https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json
+title: Kubernetes Cluster Landscape Deployment Definition
+type: object
+properties:
+  api_version:
+    enum:
+    - v0.1.0
+  virtual_resource_provider:
+    "$ref": "#/$defs/virtual_resource_provider"
+  virtual_resource_provider_programming_platform:
+    "$ref": "#/$defs/virtual_resource_provider_programming_platform"
+  deployment_regions:
+    "$ref": "#/$defs/deployment_regions"
+  k8s_cluster_types:
+    "$ref": "#/$defs/k8s_cluster_types"
+required:
+- api_version
+- virtual_resource_provider
+- virtual_resource_provider_programming_platform
+- deployment_regions
+- k8s_cluster_types
+"$defs":
+  virtualbox_cpus:
+    title: cpus
+    description: Number of vCPUs for a VM
+    type: integer
+    minimum: 0
+    default: 1
+  virtualbox_memory:
+    title: memory
+    description: Number of memory in megabytes for a VM
+    type: integer
+    minimum: 0
+    default: 1024
+  virtualbox_gui:
+    title: gui
+    description: Display VM in VirtualBox GUI
+    type: boolean
+    default: false
+  virtualbox:
+    title: virtualbox
+    description: VirtualBox VM configuration
+    type: object
+    properties:
+      gui:
+        "$refs": "#/$defs/virtualbox_gui"
+      memory:
+        "$refs": "#/$defs/virtualbox_memory"
+      cpus:
+        "$refs": "#/$defs/virtualbox_cpus"
+  vagrant_disk_size:
+    title: disk_size
+    description: VM disk size
+    type: string
+    default: 20GB
+  vagrant_box:
+    title: box
+    description: HashiCorp Vagrant box
+    type: string
+    default: ''
+  vagrant_box_url:
+    title: box_url
+    description: HashiCorp Vagrant box URL
+    type: string
+    default: ''
+  vagrant_vm_config:
+    title: vagrant_vm_config
+    description: HashiCorp Vagrant VM config
+    type: object
+    properties:
+      oneOf:
+      - title: vagrant_box
+        "$refs": "#/$defs/vagrant_box"
+      - title: vagrant_box_url
+        "$refs": "#/$defs/vagrant_box_url"
+      memory:
+        "$refs": "#/$defs/virtualbox_memory"
+      cpus:
+        "$refs": "#/$defs/virtualbox_cpus"
+  vm_config:
+    title: VM config
+    type: object
+    properties:
+      oneOf:
+      - title: vagrant_vm_config
+        "$refs": "#/$defs/vagrant_vm_config"
+  k8s_cluster_components:
+    title: k8s_cluster_components
+    description: k8s cluster components to deploy
+    type: object
+    properties:
+      apilb:
+        type: boolean
+        default: false
+        description: deploy k8s api server load balancer
+      elb:
+        type: boolean
+        default: false
+        description: deploy external bgp load balancer for k8s service resources
+      edns:
+        type: boolean
+        default: false
+        description: deploy external dns server
+      eca:
+        type: boolean
+        default: false
+        description: deploy external TLS certificate authority
+      k8s_datastore:
+        type: boolean
+        default: false
+        description: deploy k8s datastore nodes
+      k8s_master:
+        type: boolean
+        default: false
+        description: deploy k8s master nodes
+      k8s_worker:
+        type: boolean
+        default: false
+        description: deploy k8s worker nodes
+  k8s_cluster_type:
+    title: k8s cluster config
+    description: K8s cluster configuration
+    type: object
+    properties:
+      name:
+        type: string
+      debug:
+        type: boolean
+        default: false
+      deploy_components:
+        "$refs": "#/$defs/k8s_cluster_components"
+      master_nodes_per_cluster:
+        type: integer
+        minimum: 0
+        default: 0
+      worker_nodes_per_cluster:
+        type: integer
+        minimum: 0
+        default: 0
+      ip_addresses_reserved_per_cluster:
+        type: integer
+        minimum: 0
+        default: 0
+      elb_vm:
+        "$refs": "#/$defs/vm_config"
+      edns_vm:
+        "$refs": "#/$defs/vm_config"
+      eca_vm:
+        "$refs": "#/$defs/vm_config"
+      k8s_datastore_vm:
+        "$refs": "#/$defs/vm_config"
+      k8s_master_vm:
+        "$refs": "#/$defs/vm_config"
+      k8s_worker_vm:
+        "$refs": "#/$defs/vm_config"
+  k8s_cluster_types:
+    title: k8s cluster types
+    description: types of k8s cluster deployed in a region
+    type: array
+    items:
+      "$refs": "#/$defs/k8s_cluster_type"
+  region_k8s_cluster_type:
+    title: region_k8s_cluster_type
+    description: region k8s cluster type for deployment
+    type: object
+    properties:
+      k8s_cluster_type:
+        type: string
+      number_of_instances:
+        type: integer
+        minimum: 0
+        default: 0
+  region_components:
+    title: region_components
+    description: region components for deployment
+    type: array
+    items:
+      "$refs": "#/$defs/region_k8s_cluster_type"
+  region:
+    title: deployment region
+    description: deployment region and availability zones
+    type: object
+    properties:
+      region:
+        type: string
+      availability_zones:
+        type: array
+        items: string
+  regions:
+    title: deployment regions
+    description: deployment regions
+    type: array
+    items:
+      "$refs": "#/$defs/deployment_region"
+  deployment_regions:
+    title: deployment regions
+    description: deployment regions
+    type: object
+    properties:
+      regions:
+        "$refs": "#/$defs/regions"
+      region_components:
+        "$refs": "#/$defs/region_components"
+  virtual_resource_provider:
+    title: virtual_resource_provider
+    description: virtual resource provider
+    type: object
+    properties:
+      type:
+        enum:
+        - virtualbox
+        - hyper-v
+        - aws
+        - azure
+        - google-cloud
+  hashicorp_vagrant_vrppp:
+    title: hashicorp_vagrant_vrppp
+    description: HashiCorp Vagrant VRP Programming Platform
+    type: object
+    properties:
+      shared_directory_host_path:
+        type: string
+        default: ".runtime"
+      shared_directory_vm_path:
+        type: string
+        default: "./vagrant/.runtime"
+  virtual_resource_provider_programming_platform:
+    title: virtual resource provider programming platform
+    description: virtual resource provider programming platform
+    type: object
+    properties:
+      type:
+        enum:
+        - hashicorp-vagrant
+        - hashicorp-terraform
+        - aws-cloud-formation
+        - azure-resource-manager
+        - google-cloud-resource-manager
+      hashicorp_vagrant_vrp:
+        "$refs": "#/$defs/hashicorp_vagrant_vrppp"
