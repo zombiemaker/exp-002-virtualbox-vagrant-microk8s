@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-$schema: https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json
+json-schema: https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/k8s-cluster-landscape-deployment-schema-v0.1.0.json
 # Under development - not operational
 api_version: v0.1.0
 

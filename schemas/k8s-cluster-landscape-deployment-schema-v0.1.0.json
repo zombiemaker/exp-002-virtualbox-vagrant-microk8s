@@ -1,9 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/config-file-schema-v0.1.0.json",
+    "$id": "https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/k8s-cluster-landscape-deployment-schema-v0.1.0.json",
     "title": "Kubernetes Cluster Landscape Deployment Definition",
     "type": "object",
     "properties": {
+        "json-schema": { "enum": ["https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/k8s-cluster-landscape-deployment-schema-v0.1.0.json"] },
         "api_version": { "enum": ["v0.1.0"] },
         "virtual_resource_provider": { "$ref": "#/$defs/virtual_resource_provider" },
         "virtual_resource_provider_programming_platform": { "$ref": "#/$defs/virtual_resource_provider_programming_platform" },

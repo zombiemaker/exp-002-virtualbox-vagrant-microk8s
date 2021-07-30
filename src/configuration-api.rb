@@ -1,7 +1,7 @@
 require 'yaml'
 require 'json'
 require 'erb'
-require 'json_schemer'
+require 'json_schemer'  # Can only handle JSON Schema Draft 4, 6, and 7 - NOT 2019-09 or 2020-12
 
 module ConfigurationApi
 
