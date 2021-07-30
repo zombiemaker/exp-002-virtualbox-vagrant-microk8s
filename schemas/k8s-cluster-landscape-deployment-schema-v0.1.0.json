@@ -48,7 +48,12 @@
                 "gui": { "$refs": "#/$defs/virtualbox_gui"},
                 "memory": { "$refs": "#/$defs/virtualbox_memory"},
                 "cpus": { "$refs": "#/$defs/virtualbox_cpus"}
-            }
+            },
+            "required": [
+                "gui",
+                "memory",
+                "cpus"
+            ]
         },
         "vagrant_disk_size": {
             "title": "disk_size",
@@ -85,7 +90,11 @@
                 ],
                 "memory": { "$refs": "#/$defs/virtualbox_memory"},
                 "cpus": { "$refs": "#/$defs/virtualbox_cpus"}
-            }
+            },
+            "required": [
+                "memory",
+                "cpus"
+            ]
         },
         "vm_config": {
             "title": "VM config",
@@ -111,7 +120,16 @@
                 "k8s_datastore": { "type": "boolean", "default": false, "description": "deploy k8s datastore nodes" },
                 "k8s_master": { "type": "boolean", "default": false, "description": "deploy k8s master nodes" },
                 "k8s_worker": { "type": "boolean", "default": false, "description": "deploy k8s worker nodes" }
-            }
+            },
+            "required": [
+                "apilb",
+                "elb",
+                "edns",
+                "eca",
+                "k8s_datastore",
+                "k8s_master",
+                "k8s_worker"
+            ]
         },
         "k8s_cluster_type": {
             "title": "k8s cluster config",
@@ -130,7 +148,21 @@
                 "k8s_datastore_vm": { "$refs": "#/$defs/vm_config" },
                 "k8s_master_vm": { "$refs": "#/$defs/vm_config" },
                 "k8s_worker_vm": { "$refs": "#/$defs/vm_config" }
-            }
+            },
+            "required": [
+                "name",
+                "debug",
+                "deploy_components",
+                "master_nodes_per_cluster",
+                "worker_nodes_per_cluster",
+                "ip_addresses_reserved_per_cluster",
+                "elb_vm",
+                "edns_vm",
+                "eca_vm",
+                "k8s_datastore_vm",
+                "k8s_master_vm",
+                "k8s_worker_vm"
+            ]
         },
         "k8s_cluster_types": {
             "title": "k8s cluster types",
@@ -160,7 +192,11 @@
             "properties": {
                 "region": { "type": "string" },
                 "availability_zones": { "type": "array", "items": "string" }
-            }
+            },
+            "required": [
+                "region",
+                "availability_zones"
+            ]
         },
         "regions": {
             "title": "deployment regions",
@@ -175,7 +211,11 @@
             "properties": {
                 "regions": { "$refs": "#/$defs/regions" },
                 "region_components": { "$refs": "#/$defs/region_components" }
-            }
+            },
+            "required": [
+                "regions",
+                "region_components"
+            ]
         },
         "virtual_resource_provider": {
             "title": "virtual_resource_provider",
@@ -183,7 +223,10 @@
             "type": "object",
             "properties": {
                 "type": { "enum": ["virtualbox", "hyper-v", "aws", "azure", "google-cloud"] }
-            }
+            },
+            "required": [
+                "type"
+            ]
         },
         "hashicorp_vagrant_vrppp": {
             "title": "hashicorp_vagrant_vrppp",
@@ -192,7 +235,11 @@
             "properties": {
                 "shared_directory_host_path": { "type": "string", "default": ".runtime" },
                 "shared_directory_vm_path": { "type": "string", "default": "./vagrant/.runtime" }
-            }
+            },
+            "required": [
+                "shared_directory_host_path",
+                "shared_directory_vm_path"
+            ]
         },
         "virtual_resource_provider_programming_platform": {
             "title": "virtual resource provider programming platform",
@@ -202,6 +249,10 @@
                 "type": { "enum": [ "hashicorp-vagrant", "hashicorp-terraform", "aws-cloud-formation", "azure-resource-manager", "google-cloud-resource-manager" ] },
                 "hashicorp_vagrant_vrp": { "$refs": "#/$defs/hashicorp_vagrant_vrppp" }
             }
+            ,
+            "required": [
+                "type"
+            ]
         }
     }
 }
