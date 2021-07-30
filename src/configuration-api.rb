@@ -48,19 +48,43 @@ module ConfigurationApi
         end # if config_file
 
         # Get config file content
-        config_file_yaml = File.open(config_file).read
-        puts "YAML format\n#{config_file_yaml}"
-        config_file_json = YAML.load(config_file_yaml).to_json
-        puts "JSON format\n#{config_file_json}"
+        # TODO: check if data is in YAML
+        config_file_data_raw = File.open(config_file).read
+        puts "===================================="
+        puts "Configuration file raw data"
+        puts "#{config_file_data_raw}"
+        
+        config_file_data_yaml = YAML.load(config_file_data_raw)
+        puts "===================================="
+        puts "Configuration file data in YAML object"
+        puts "#{config_file_data_yaml}"
+        
+        config_file_data_json = JSON.pretty_generate(config_file_data_yaml)
+        puts "===================================="
+        puts "Configuration file data in JSON"
+        puts "#{config_file_data_json}"
+        
         json_schema_file="..\\schemas\\k8s-cluster-landscape-deployment-schema-v0.1.0.json"
-        puts "JSON schema file: #{json_schema_file}"
+        puts "===================================="
+        puts "JSON schema file:  #{json_schema_file}"
+
         json_schema = File.open(json_schema_file).read
-        #puts "JSON schema\n#{json_schema}"
-        schemer = JSONSchemer.schema(json_schema)
-        puts "Is configuration valid? #{schemer.valid?(config_file_json)}"
+        puts "#{json_schema}"
 
 
-        config_file_hash = YAML.load( ERB.new(config_file_yaml).result)
+        schema = JSONSchemer.schema(json_schema)
+        unless schema.valid?(config_file_data_json)
+            puts "===================================="
+            puts "Configuration data invalid:"
+            schema.validate(config_file_data_json).each do |e|
+                puts "- error type: #{e["type"]}"
+                puts "  data: #{e['data']}"
+                puts "  path: #{e['data_pointer']}"
+            end # schema.validate
+        end # unless schema.valid?
+
+
+        config_file_hash = YAML.load( ERB.new(config_file_data_yaml).result)
         
 
         return config_file_hash
