@@ -12,6 +12,7 @@
         "k8s_cluster_types": { "$ref": "#/$defs/k8s_cluster_types" }
     },
     "required": [
+        "json-schema",
         "api_version",
         "virtual_resource_provider",
         "virtual_resource_provider_programming_platform",
