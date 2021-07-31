@@ -14,11 +14,11 @@
 	},
 
 	// Use this to delete the .postCreateCommandMarker file
-	"initializeCommand": "if [ -f containerfs/.vscode-server/data/Machine/.postCreateCommandMarker ]; then rm containerfs/.vscode-server/data/Machine/.postCreateCommandMarker; fi",
+	//"initializeCommand": "if [ -f containerfs/.vscode-server/data/Machine/.postCreateCommandMarker ]; then rm containerfs/.vscode-server/data/Machine/.postCreateCommandMarker; fi",
 	// THIS IS NOT EXECUTED IF ~/.vscode-server/data/Machine/.postCreateCommandMarker file exists
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// This is needed to setup bash shell
-	"postCreateCommand": ["/entrypoint.sh", "ls"],
+	//"postCreateCommand": ["/entrypoint.sh", "ls"],
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [],
