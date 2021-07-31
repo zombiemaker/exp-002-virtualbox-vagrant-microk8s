@@ -1,0 +1,39 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.106.0/containers/java-12
+{
+	"dockerFile": "Dockerfile",
+	"remoteUser": "me",
+	"mounts": [
+		"source=${localWorkspaceFolder}/containerfs,target=/home/me,type=bind,consistency=cached"
+	],
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": { 
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"git.ignoreLegacyWarning": true
+	},
+
+	// Use this to delete the .postCreateCommandMarker file
+	"initializeCommand": "if [ -f containerfs/.vscode-server/data/Machine/.postCreateCommandMarker ]; then rm containerfs/.vscode-server/data/Machine/.postCreateCommandMarker; fi",
+	// THIS IS NOT EXECUTED IF ~/.vscode-server/data/Machine/.postCreateCommandMarker file exists
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// This is needed to setup bash shell
+	"postCreateCommand": ["/entrypoint.sh", "ls"],
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	
+	// appPort
+	// If you use a single port format (e.g., "8080"), this configures Docker to publish the container port you specified and maps a random port of the host machine to the container port
+	// If you use a two port format (e.g., "12000:8080"), this configures Docker to publish the container port (specified by the second number) and maps the host machine port (specified by the first number) to the container portt
+	// See https://code.visualstudio.com/docs/remote/containers#_always-forwarding-a-port for more details
+	"appPort": [ "8080" ]
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "java -version",
+
+	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
+	// "remoteUser": "vscode"
+}
