@@ -59,9 +59,10 @@ module ConfigurationApi
         puts "Configuration file data in YAML object"
         puts "#{config_file_data_yaml}"
         
-        config_file_data_json = JSON.pretty_generate(config_file_data_yaml)
+        #config_file_data_json = JSON.pretty_generate(config_file_data_yaml)
+        config_file_data_json = config_file_data_yaml.to_json
         puts "===================================="
-        puts "Configuration file data in JSON"
+        puts "Configuration file data in JSON object"
         puts "#{config_file_data_json}"
         
         json_schema_file="..\\schemas\\k8s-cluster-landscape-deployment-schema-v0.1.0.json"
@@ -69,7 +70,7 @@ module ConfigurationApi
         puts "JSON schema file:  #{json_schema_file}"
 
         json_schema = File.open(json_schema_file).read
-        puts "#{json_schema}"
+        #puts "#{json_schema}"
 
 
         schema = JSONSchemer.schema(json_schema)
@@ -78,14 +79,16 @@ module ConfigurationApi
             puts "Configuration data invalid:"
             schema.validate(config_file_data_json).each do |e|
                 puts "- error type: #{e["type"]}"
-                puts "  data: #{e['data']}"
-                puts "  path: #{e['data_pointer']}"
+                #puts "  schema: #{e['schema']}"
+                #puts "  schema_pointer: #{e['schema_pointer']}"
+                puts "  data: \n#{JSON.pretty_generate(e['data'])}"
+                puts "  data_pointer: #{e['data_pointer']}"
             end # schema.validate
         end # unless schema.valid?
 
-
         config_file_hash = YAML.load( ERB.new(config_file_data_yaml).result)
         
+        config_file_hash = []
 
         return config_file_hash
 

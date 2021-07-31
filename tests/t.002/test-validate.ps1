@@ -5,7 +5,8 @@ $env:kubeconfig=$home + "\.kube\" + $env:cdir + "-config"
 
 # Start VM landscape
 cd ..\..\src\
-vagrant --config-file=$env:cpath\k8s-deployment-config.yaml validate
+#vagrant --config-file=$env:cpath\k8s-deployment-config.yaml validate
+vagrant --config-file=$env:cpath\config-t01.yaml validate
 
 # Copying kubectl config for cluster to user .kube directory
 cp .runtime\kubectl-config $env:kubeconfig
