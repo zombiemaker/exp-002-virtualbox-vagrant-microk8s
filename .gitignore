@@ -1,4 +1,5 @@
 containerfs/*
+!containerfs/.gitignore
 .vagrant/
 .runtime/
 .buildtime/
