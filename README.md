@@ -51,7 +51,7 @@ Planned to be implemented:
 * External K8s cluster services
   * K8s cluster external tcp/upd load balancer (HAproxy, NGINX) with virtual IPs to K8s API server
     * [Keepalived](https://keepalived.readthedocs.io/en/latest/index.html)
-  * K8s cluster external BGP router load balancer for applications running on the K8s cluster
+  * K8s cluster external BGP router load balancer for applications running on the K8s cluster services
   * K8s cluster external DNS resource provider
   * K8s cluster external TLS CA certificate resource provider
   * K8s external load balancer K8s resource provider operator (MetaLB)
@@ -63,6 +63,10 @@ Planned to be implemented:
   * Virtual Kubelet
 * K8s-hosted application system components
   * TCP / UDP ingress controller
+
+## Running Ruby Tests
+
+To run the Ruby test programs, you need to have Ruby installed.  This project uses Visual Studio Code devcontainer features to run inside a WSL2 Docker Linux container.  If you have that configured, simply use Visual Studio Code to switch start in a container.
 
 
 ## Issues
