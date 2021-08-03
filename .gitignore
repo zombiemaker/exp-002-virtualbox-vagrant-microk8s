@@ -1,3 +1,4 @@
+containerfs/*
 .vagrant/
 .runtime/
 .buildtime/

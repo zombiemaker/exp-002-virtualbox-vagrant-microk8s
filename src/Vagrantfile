@@ -13,7 +13,9 @@ require 'configuration-api'
 
 # BUG: Need to handle vagrant options
 $opts = GetoptLong.new(
-    [ '--config-file', GetoptLong::OPTIONAL_ARGUMENT]
+    [ '--config-file', GetoptLong::REQUIRED_ARGUMENT],
+    [ '--schema-file', GetoptLong::REQUIRED_ARGUMENT],
+    [ '--debug', GetoptLong::OPTIONAL_ARGUMENT]
 )
 
 $cfg = ConfigurationApi.init_cfg($opts)

@@ -1,0 +1,12 @@
+#%YAML 1.2
+# Ruby yaml module has bug and cannot parse YAML directive
+---
+json-schema: https://raw.githubusercontent.com/zombiemaker/exp-002-virtualbox-vagrant-microk8s/main/schemas/k8s-cluster-landscape-config-schema-v0.1.0.json
+# Under development - not operational
+api_version: v0.1.0
+# Platform providing virtualized resources
+virtual_resource_provider: a
+# Platform for running programs to orchestrate virtual resource lifecycle
+virtual_resource_provider_programming_platform: b
+deployment_regions: c
+k8s_cluster_types: d
