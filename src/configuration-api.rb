@@ -7,14 +7,60 @@ require 'json_schemer'  # Can only handle JSON Schema Draft 4, 6, and 7 - NOT 20
 
 module ConfigurationApi
 
+    ###################################################################
+    #
+    ###################################################################
     # TODO: Design configuration object to handle different API versions over time
-    class Configuration
+    class K8sClusterLandscapeConfig
+        def initialize
+            @k8s_cluster_types = Hash.new
+            @virtual_resource_provider = VirtualResourceProvider.new
+        end # def initialize
 
-    end # class Configuration
+    end # class K8sClusterLandscapeConfig
 
+    ###################################################################
+    #
+    ###################################################################
     class K8sClusterType
-        
-    end # K8sClusterType
+        def initialize
+        end # def initialize
+    end # class K8sClusterType
+
+    ###################################################################
+    #
+    ###################################################################
+    class VirtualResourceProvider
+        def initialize
+        end # def initialize
+    end # class VirtualResourceProvider
+
+    ###################################################################
+    #
+    ###################################################################
+    class VirtualResourceProviderProgrammingPlatform
+        def initialize
+        end # def initialize
+    end # class VirtualResourceProviderProgrammingPlatform
+
+    ###################################################################
+    #
+    ###################################################################
+    class DeploymentRegions
+        def initialize
+        end # def initialize
+    end # class DeploymentRegions
+
+
+
+
+
+
+    ###################################################################
+    #
+    ###################################################################
+
+
 
     # Method to get configuration data from configuration file
     # TODO:  Check config file for errors against the schema definition
@@ -80,17 +126,14 @@ module ConfigurationApi
                 puts "- error type: #{e["type"]}"
                 puts "  schema: #{e['schema']}"
                 puts "  schema_pointer: #{e['schema_pointer']}"
-                #puts "  data: \n#{JSON.pretty_generate(e['data'])}"
                 puts "  data: #{e['data']}"
                 puts "  data_pointer: #{e['data_pointer']}"
             end # schema.validate
             puts "++++++++++++++++++++++++++++++++++++"
         end # unless schema.valid?
 
-        config_file_hash = YAML.load( ERB.new(config_file_data_raw).result)
-        
-        return config_file_hash
-
+        # TODO:
+        return config_file_data_json_hash
     end # def init_config_hash
     module_function :get_config_file_content
 
@@ -155,7 +198,7 @@ module ConfigurationApi
     end # init_config_0_0_1
     module_function :init_config_0_0_1
 
-    # Convert from API v0.0.1 data object to configuration object
+    # Convert from API v0.1.0 data object to configuration object
     # TODO: Not implemented
     def init_config_0_1_0(opts, config_hash, config_file_hash)
         puts "init_config_0_1_0 start" if opts["debug_switch"]
