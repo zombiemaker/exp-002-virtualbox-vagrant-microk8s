@@ -1,11 +1,14 @@
 // For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.106.0/containers/java-12
 {
-	"dockerFile": "Dockerfile",
+	"dockerFile": "dockerfiles/Dockerfile",
 	"remoteUser": "me",
 	"mounts": [
 		"source=${localWorkspaceFolder}/containerfs,target=/home/me,type=bind,consistency=cached"
 	],
+
+	// Adding capability to capture packets inside the container using tshark
+	"runArgs": [ "--cap-add=NET_RAW", "--cap-add=NET_ADMIN"],
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
@@ -23,17 +26,49 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [],
 
+	// initializeCommand
+	// A command string or list of command arguments to run on the host machine before the container is created. 
+	// The command executes from the workspaceFolder locally. The array syntax ["yarn", "install"] will invoke 
+	// the command (in this case yarn) directly without using a shell, but supports Windows/macOS/Linux path 
+	// translation. The string syntax ("yarn install") is better for simple commands.
+
+	// assuming this is being ran within WSL or linux shell
+	//"initializeCommand": "chmod 777 .devcontainer/scripts/*.sh; .devcontainer/scripts/initialize.sh",
+	"initializeCommand": "devcontainer/scripts/initialize.ps1",
+
+    // onCreateCommand
+    // A command to run when creating the container. If this is a single string, it will be run in a shell. 
+    // If this is an array of strings, it will be run as a single command without shell.
+    // Command runs outside the container
+    "onCreateCommand": ".devcontainer/scripts/on-create.sh",
+
+    // postCreateCommand
+    // Use 'postCreateCommand' to run commands after the container is created.
+    // Command runs inside the container after it is created. 
+    // The commands execute from the workspaceFolder in the container. 
+	"postCreateCommand": ".devcontainer/scripts/post-create.sh",
+
+    // postStartCommand
+    // A command string or list of command arguments to run when the container starts (in all cases). The 
+    // parameters behave exactly like postCreateCommand, but the commands execute on start rather than create.
+    // Command runs inside the container after it is created. 
+    // The commands execute from the workspaceFolder in the container. 
+    "postStartCommand": ".devcontainer/scripts/post-start.sh",
+
+    // postAttachCommand
+    // A command string or list of command arguments to run after VS Code has attached to a running container 
+    // (in all cases). The parameters behave exactly like postCreateCommand, but the commands execute on attach 
+    // rather than create.
+    // Command runs inside the container after it is created. 
+    // The commands execute from the workspaceFolder in the container. 
+    "postAttachCommand": ".devcontainer/scripts/post-attach.sh",
+
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	
+	// "forwardPorts": [],
+
 	// appPort
 	// If you use a single port format (e.g., "8080"), this configures Docker to publish the container port you specified and maps a random port of the host machine to the container port
 	// If you use a two port format (e.g., "12000:8080"), this configures Docker to publish the container port (specified by the second number) and maps the host machine port (specified by the first number) to the container portt
 	// See https://code.visualstudio.com/docs/remote/containers#_always-forwarding-a-port for more details
 	"appPort": [ "8080" ]
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "java -version",
-
-	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
 }
