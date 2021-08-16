@@ -34,7 +34,7 @@
 
 	// assuming this is being ran within WSL or linux shell
 	//"initializeCommand": "chmod 777 .devcontainer/scripts/*.sh; .devcontainer/scripts/initialize.sh",
-	"initializeCommand": "devcontainer/scripts/initialize.ps1",
+	"initializeCommand": "powershell -File .devcontainer\\scripts\\initialize.ps1",
 
     // onCreateCommand
     // A command to run when creating the container. If this is a single string, it will be run in a shell. 
